@@ -1,0 +1,274 @@
+/* ===== DROPDOWN THỂ LOẠI ===== */
+.theloai-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.theloai-dropdown > a {
+    color: #ecf0f1;
+    text-decoration: none;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-weight: 500;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.theloai-dropdown > a::after {
+    content: '▼';
+    font-size: 10px;
+    transition: transform 0.3s ease;
+}
+
+.theloai-dropdown:hover > a {
+    background: #3498db;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4);
+}
+
+.theloai-dropdown:hover > a::after {
+    transform: rotate(180deg);
+}
+
+/* Menu thả xuống */
+.theloai-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    min-width: 300px;
+    max-width: 680px;
+    background: white;
+    box-shadow: 0 14px 35px rgba(15, 15, 15, 0.08);
+    border-radius: 16px;
+    border: 1px solid #e8e8e8;
+    padding: 14px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: all 0.22s ease;
+    z-index: 1000;
+}
+
+.theloai-dropdown:hover .theloai-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Grid thể loại */
+.theloai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+/* Item thể loại */
+.theloai-item {
+    padding: 8px 10px;
+    color: #1e1e1e;
+    background: #f8f8f8;
+    border: 1px solid #efefef;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    font-size: 0.86rem;
+    display: block;
+}
+
+.theloai-item:hover {
+    background: #1a1a1a;
+    color: #ffffff;
+    border-color: #1a1a1a;
+}
+
+/* Empty state */
+.theloai-empty {
+    color: #5c5c5c;
+    font-size: 0.9rem;
+    padding: 8px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .theloai-menu {
+        min-width: 280px;
+        max-width: 520px;
+    }
+}
+
+@media (max-width: 768px) {
+    .theloai-menu {
+        min-width: 260px;
+        max-width: 420px;
+        padding: 14px;
+    }
+
+    .theloai-grid {
+        grid-template-columns: repeat(2, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    .theloai-item {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .theloai-menu {
+        min-width: 240px;
+        max-width: 300px;
+        left: 0;
+        transform: translateY(8px);
+    }
+
+    .theloai-dropdown:hover .theloai-menu {
+        transform: translateY(0);
+    }
+
+    .theloai-grid {
+        grid-template-columns: 1fr;
+        max-height: 300px;
+    }
+}
+/* ===== CHI TIẾT THỂ LOẠI PAGE ===== */
+
+/* Page Header */
+.theloai-page-header {
+    background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
+    padding: 50px 0;
+    margin-bottom: 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.theloai-header-content {
+    text-align: center;
+}
+
+.theloai-header-content h2 {
+    color: white;
+    font-size: 36px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.theloai-header-content p {
+    color: rgba(255,255,255,0.9);
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+/* Breadcrumb */
+.theloai-breadcrumb {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.8);
+    font-size: 14px;
+}
+
+.theloai-breadcrumb a {
+    color: white;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.theloai-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+.theloai-breadcrumb span {
+    color: rgba(255,255,255,0.6);
+}
+
+/* Empty State */
+.theloai-empty-state {
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.empty-icon {
+    font-size: 100px;
+    margin-bottom: 25px;
+    opacity: 0.5;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+.theloai-empty-state h3 {
+    color: white;
+    font-size: 28px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.theloai-empty-state p {
+    color: rgba(255,255,255,0.7);
+    font-size: 16px;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.btn-back-home {
+    display: inline-block;
+    padding: 14px 35px;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+}
+
+.btn-back-home:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .theloai-page-header {
+        padding: 40px 0;
+    }
+
+    .theloai-header-content h2 {
+        font-size: 28px;
+    }
+
+    .theloai-header-content p {
+        font-size: 14px;
+    }
+
+    .theloai-breadcrumb {
+        font-size: 13px;
+        flex-wrap: wrap;
+    }
+
+    .theloai-empty-state {
+        padding: 60px 15px;
+    }
+
+    .empty-icon {
+        font-size: 80px;
+    }
+}

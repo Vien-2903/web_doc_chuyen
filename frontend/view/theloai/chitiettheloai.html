@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truyện Theo Thể Loại</title>
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/home.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloai_user.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <section class="stories">
+        <div class="container">
+            <h2 id="title">Đang tải...</h2>
+            <div class="story-grid" id="story-grid">
+                <div class="story-status">Đang tải danh sách truyện...</div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // ── 1. Load header (copy y chang từ index.html) ─────────────────
+        async function loadHeader() {
+            try {
+                const res = await fetch(
+                    '/web_doc_truyen/frontend/view/layouts/user/header.html',
+                    { credentials: 'same-origin' }
+                );
+                const html = await res.text();
+                const doc  = new DOMParser().parseFromString(html, 'text/html');
+                const header  = doc.querySelector('header');
+                const scripts = doc.querySelectorAll('script');
+
+                document.getElementById('header-container').innerHTML = header.outerHTML;
+
+                scripts.forEach(s => {
+                    const el = document.createElement('script');
+                    s.src ? (el.src = s.src) : (el.textContent = s.textContent);
+                    document.body.appendChild(el);
+                });
+            } catch (e) {
+                console.error('Lỗi tải header:', e);
+            }
+        }
+
+        // ── 2. Helpers (copy từ index.html) ─────────────────────────────
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatViewCount(value) {
+            return Number(value || 0).toLocaleString('vi-VN');
+        }
+
+        function resolveCoverUrl(anhBia) {
+            if (!anhBia) return 'https://via.placeholder.com/180x240/2c3e50/ffffff?text=No+Image';
+
+            let p = String(anhBia).trim().replace(/\\/g, '/');
+
+            if (p.startsWith('http://') || p.startsWith('https://')) return p;
+
+            p = p.replace(/^\/web_doc_truyen\//, '').replace(/^web_doc_truyen\//, '');
+
+            const prefixes = [
+                'uploads/anhbia/',
+                'frontend/public/uploads/anhbia/',
+                'frontend/images/anhbia/',
+                'images/anhbia/',
+                'backend/uploads/anhbia/'
+            ];
+
+            for (const prefix of prefixes) {
+                if (p.startsWith(prefix)) {
+                    const fileName = p.split('/').filter(Boolean).pop();
+                    return '/web_doc_truyen/backend/uploads/anhbia/' + fileName;
+                }
+            }
+
+            return '/web_doc_truyen/' + p;
+        }
+
+        // ── 3. Render danh sách truyện ──────────────────────────────────
+        function renderStories(stories) {
+            const grid = document.getElementById('story-grid');
+
+            if (!Array.isArray(stories) || stories.length === 0) {
+                grid.innerHTML = `
+                    <div class="story-status">
+                        <h3>Chưa có truyện nào trong thể loại này</h3>
+                    </div>`;
+                return;
+            }
+
+            grid.innerHTML = stories.map(story => `
+                <article class="story-card">
+                    <a href="/web_doc_truyen/frontend/view/truyen/chitiet.html?id=${story.id}">
+                        <img
+                            src="${resolveCoverUrl(story.anh_bia)}"
+                            alt="${escapeHtml(story.ten_truyen)}"
+                            onerror="this.src='https://via.placeholder.com/180x240/2c3e50/ffffff?text=No+Image'">
+                        <h3>${escapeHtml(story.ten_truyen || 'Không có tiêu đề')}</h3>
+                        <p>Tác giả: ${escapeHtml(story.but_danh || story.ten_tacgia || 'Đang cập nhật')}</p>
+                        <div class="story-meta">
+                            <span>
+                                <i class="fa-solid fa-eye"></i>
+                                ${formatViewCount(story.luot_xem)}
+                            </span>
+                        </div>
+                    </a>
+                </article>
+            `).join('');
+        }
+
+        // ── 4. Fetch API ────────────────────────────────────────────────
+        async function loadTruyenTheoTheLoai() {
+            const id    = new URLSearchParams(window.location.search).get('id');
+            const title = document.getElementById('title');
+            const grid  = document.getElementById('story-grid');
+
+            if (!id) {
+                title.textContent = 'Không tìm thấy thể loại';
+                grid.innerHTML = '';
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `/web_doc_truyen/backend/api/theloai/get_truyen_by_theloai_api.php?id=${id}`
+                );
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    title.textContent = 'Lỗi: ' + (err.message || 'Không tải được');
+                    return;
+                }
+
+                const data = await res.json();
+
+                // Cập nhật tiêu đề trang
+                title.textContent  = data.ten_theloai + ' (' + data.total + ' truyện)';
+                document.title     = data.ten_theloai + ' - DocTruyen';
+
+                renderStories(data.truyens || []);
+
+            } catch (err) {
+                console.error(err);
+                grid.innerHTML = `
+                    <div class="story-status">
+                        <h3>Lỗi kết nối server</h3>
+                        <p>Vui lòng thử lại sau</p>
+                    </div>`;
+            }
+        }
+
+        // ── 5. Khởi chạy ────────────────────────────────────────────────
+        loadHeader();
+        loadTruyenTheoTheLoai();
+    </script>
+</body>
+</html>

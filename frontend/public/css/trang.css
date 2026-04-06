@@ -1,0 +1,194 @@
+
+.required {
+    color: red;
+}
+
+
+
+/* ===== NÚT QUAY LẠI CHƯƠNG ===== */
+a.btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 10px 18px;
+    background-color: #ecf0f1;   
+    color: #2c3e50;
+
+    border-radius: 10px;
+    border: 1px solid #dcdcdc;
+
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+
+a.btn-back:hover {
+    background-color: #3498db;
+    color: #ffffff;
+    border-color: #3498db;
+    text-decoration: none; 
+    box-shadow: 0 6px 14px rgba(52,152,219,0.35);
+    transform: translateY(-2px);
+}
+
+/* CLICK */
+a.btn-back:active {
+    transform: scale(0.97);
+}
+
+.trang-search-form {
+    margin: 20px 0;
+}
+
+.trang-search-container {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 1500px;
+}
+
+.trang-search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+.trang-search-button {
+    padding: 12px 24px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.trang-search-button:hover {
+    background: #0056b3;
+}
+
+.trang-search-clear {
+    padding: 12px 18px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+}
+
+.trang-search-clear:hover {
+    background: #545b62;
+}
+
+
+.trang-badge {
+    background: #3498db;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.trang-type-text {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+
+.trang-preview img {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+
+.trang-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.trang-actions a {
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.trang-actions .btn-edit {
+    color: #f39c12;
+}
+
+.trang-actions .btn-delete {
+    color: #e74c3c;
+}
+
+
+.btn-manage-trang {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    display: inline-block;
+    box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-manage-trang:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+}
+
+
+@media (max-width: 768px) {
+    .trang-search-container {
+        flex-direction: column;
+    }
+}
+/* ===== FORM ADD / EDIT TRANG ===== */
+.trang-add-form {
+    max-width: 1200px;       /* KHÔNG QUÁ NGANG */
+    width: 100%;
+    margin: 0 auto;
+    padding: 30px 40px;
+}
+
+/* Table full ngang trong form */
+.trang-add-form table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.trang-add-form td {
+    padding: 10px 8px;
+    vertical-align: top;
+}
+
+/* INPUT + SELECT */
+.trang-add-form input,
+.trang-add-form select {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+}
+
+/* TEXTAREA NỘI DUNG */
+.trang-add-form textarea {
+    width: 100%;
+    min-height: 480px;      /* TO RÕ RÀNG */
+    font-size: 16px;
+    line-height: 1.7;
+    padding: 14px;
+    resize: vertical;
+}
+
+
+

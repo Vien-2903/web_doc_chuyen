@@ -1,0 +1,98 @@
+<?php require_once __DIR__ . '/../layouts/cover_image_helper.php'; ?>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($truyen['ten_truyen']); ?> - Web Đọc Truyện Online</title>
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/user.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/truyen.css">
+</head>
+<body>
+    <?php include __DIR__ . '/../layouts/user/header.html'; ?>
+    <!-- Main Content -->
+    <div class="container stories">
+        <!-- Nút quay lại -->
+        <div style="margin-bottom: 20px;">
+            <a href="/web_doc_truyen/frontend/public/index.php" class="back-button">
+                ← Quay lại
+            </a>
+        </div>
+
+        <!-- Card thông tin truyện -->
+        <div class="story-card truyen-info-card">
+            <div class="truyen-info-grid">
+                <!-- Ảnh bìa -->
+                <div>
+                    <img src="<?php echo htmlspecialchars(resolve_cover_image_url($truyen['anh_bia'] ?? '')); ?>"
+                        alt="<?php echo htmlspecialchars($truyen['ten_truyen']); ?>"
+                        class="truyen-cover"
+                        onerror="this.src='https://via.placeholder.com/180x240/2c3e50/ffffff?text=No+Image'">
+                </div>
+
+               <!-- Thông tin -->
+                <div class="truyen-details">
+                    <h2 class="truyen-title">
+                        <?php echo htmlspecialchars($truyen['ten_truyen']); ?>
+                    </h2>
+                    
+                    <p class="truyen-info-row">
+                        <strong class="info-label">👤 Tác giả:</strong> 
+                        <span class="info-value"><?php echo htmlspecialchars($truyen['tac_gia']); ?></span>
+                    </p>
+
+                    <p class="truyen-info-row">
+                        <strong class="info-label">📂 Thể loại:</strong> 
+                        <span class="info-value"><?php echo htmlspecialchars($truyen['the_loai']); ?></span>
+                    </p>
+
+                    <p class="truyen-info-row">
+                        <strong class="info-label">📊 Trạng thái:</strong> 
+                        <span class="status-badge-inline <?php 
+                            if($truyen['trang_thai'] == 'Đang ra') echo 'status-dangra';
+                            elseif($truyen['trang_thai'] == 'Hoàn thành') echo 'status-hoanthanh';
+                            else echo 'status-tamdung';
+                        ?>">
+                            <?php echo htmlspecialchars($truyen['trang_thai']); ?>
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danh sách chương -->
+        <h2 class="chuong-title">📖 Danh Sách Chương</h2>
+        
+        <?php if(!empty($danhSachChuong)): ?>
+        <div class="story-grid">
+            <?php foreach($danhSachChuong as $chuong): ?>
+            <div class="story-card">
+                <a href="index.php?page=danhsachtrang&id=<?php echo $chuong['id']; ?>">
+                    <h3 class="chuong-card-title">
+                        Chương <?php echo $chuong['so_chuong']; ?>
+                    </h3>
+                    <p class="chuong-name">
+                        <?php echo htmlspecialchars($chuong['ten_chuong']); ?>
+                    </p>
+                    <p class="chuong-date">
+                        📅 <?php echo date('d/m/Y', strtotime($chuong['ngay_dang'])); ?>
+                    </p>
+                </a>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+        <div class="story-card empty-chuong">
+            <p>Chưa có chương nào được đăng</p>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>© 2024 Đọc Truyện Online - All Rights Reserved | Made with ❤️</p>
+        </div>
+    </footer>
+</body>
+</html>

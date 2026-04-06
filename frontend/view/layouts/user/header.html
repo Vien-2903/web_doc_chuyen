@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Đọc Truyện</title>
+    <link rel="stylesheet" href="../public/css/theloai_user.css">
+    <link rel="stylesheet" href="../public/css/home.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/log.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <h1><a href="/web_doc_truyen/frontend/public/index.html">DocTruyen</a></h1>
+                <nav class="nav-left">
+                    <!-- Dropdown Thể Loại -->
+                    <div class="theloai-dropdown">
+                        <a href="javascript:void(0)">Thể Loại</a>
+                        <div class="theloai-menu">
+                            <div class="theloai-grid" id="theloai-grid">
+                                <div class="theloai-empty">Đang tải thể loại...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="/web_doc_truyen/frontend/public/index.php" class="quick-nav-link">
+                        Lịch Sử
+                    </a>
+                    <a href="/web_doc_truyen/frontend/public/index.php" class="quick-nav-link">
+                        Yêu Thích
+                    </a>
+                    <a href="/web_doc_truyen/frontend/public/index.php" class="quick-nav-link">
+                        Bình Luận
+                    </a>
+                </nav>
+                <form method="GET" action="/web_doc_truyen/frontend/public/index.php" class="header-search">
+                    <input type="hidden" name="page" value="search">
+                    <div class="search-input-wrap">
+                        <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+                        <input type="text"
+                               class="search-input-header"
+                               name="keyword"
+                               id="header-keyword"
+                               value="">
+                    </div>
+                    <button type="submit" class="search-btn-header">Tìm kiếm</button>
+                </form>
+                <nav class="nav-right" id="nav-right">
+                    <a href="/web_doc_truyen/frontend/view/log/login.html" class="login-state-btn">Đăng Nhập</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <script>
+        (function () {
+            var categoryGrid = document.getElementById('theloai-grid');
+            var navRight = document.getElementById('nav-right');
+            var keywordInput = document.getElementById('header-keyword');
+
+            function renderCategories(categories, message) {
+                categoryGrid.innerHTML = '';
+
+                if (!Array.isArray(categories) || categories.length === 0) {
+                    var emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'theloai-empty';
+                    emptyDiv.textContent = message || 'Chưa có thể loại nào';
+                    categoryGrid.appendChild(emptyDiv);
+                    return;
+                }
+
+                categories.forEach(function (category) {
+                    var link = document.createElement('a');
+                    link.className = 'theloai-item';
+                    link.href = '/web_doc_truyen/frontend/view/theloai/chitiettheloai.html?id=' + encodeURIComponent(category.id);
+                    link.textContent = category.ten_theloai || '';
+                    categoryGrid.appendChild(link);
+                });
+            }
+
+            function renderUser(user) {
+                navRight.innerHTML = '';
+
+                if (user && user.isLoggedIn) {
+                    var accountLink = document.createElement('a');
+                    accountLink.href = '/web_doc_truyen/frontend/view/hoso_user/hoso_view.html';
+                    accountLink.className = 'login-state-btn';
+                    accountLink.innerHTML = '<i class="fa-regular fa-user"></i><span class="user-name">' + (user.displayName || 'Tài khoản') + '</span>';
+
+                    var logoutLink = document.createElement('a');
+                    logoutLink.href = '#';
+                    logoutLink.className = 'logout-outside';
+                    logoutLink.innerHTML = '<i class="fa-solid fa-arrow-right-from-bracket"></i> Đăng Xuất';
+                    logoutLink.addEventListener('click', function (event) {
+                        event.preventDefault();
+
+                        fetch('/web_doc_truyen/backend/api/log/logout_api.php', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json'
+                            }
+                        })
+                            .then(function () {
+                                window.location.href = '/web_doc_truyen/frontend/public/index.html';
+                            })
+                            .catch(function () {
+                                window.location.href = '/web_doc_truyen/frontend/public/index.html';
+                            });
+                    });
+
+                    navRight.appendChild(accountLink);
+                    navRight.appendChild(logoutLink);
+                    return;
+                }
+
+                var loginLink = document.createElement('a');
+                loginLink.href = '/web_doc_truyen/frontend/view/log/login.html';
+                loginLink.className = 'login-state-btn';
+                loginLink.textContent = 'Đăng Nhập';
+                navRight.appendChild(loginLink);
+            }
+
+            function loadHeaderData() {
+                var queryString = window.location.search || '';
+
+                fetch('/web_doc_truyen/backend/api/theloai/theloai_header_api.php' + queryString, {
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Không tải được dữ liệu header');
+                        }
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        renderCategories(data.danhSachTheLoai, data.thongBaoTheLoai);
+                        renderUser(data.user || {});
+
+                        if (keywordInput) {
+                            keywordInput.value = data.keyword || '';
+                        }
+                    })
+                    .catch(function () {
+                        renderCategories([], 'Không tải được dữ liệu thể loại');
+                        renderUser({ isLoggedIn: false });
+                    });
+            }
+
+            loadHeaderData();
+        })();
+    </script>

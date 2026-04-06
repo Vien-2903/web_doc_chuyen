@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Danh Sách Trang</title>
+    <link rel="stylesheet" href="../../public/css/admin.css">
+    <link rel="stylesheet" href="../../public/css/trang.css">
+</head>
+<body>
+
+<a href="../../index.php?page=admin&controller=chuong&action=index" class="btn-back">
+    ← Quay lại Chương
+</a>
+
+<div class="admin-container">
+    <div class="trang-header">
+        <h2>Danh sách Trang</h2>
+    </div>
+
+    <a href="add.html" class="btn-add">Thêm trang mới</a>
+
+    <div class="trang-search-container" style="margin:16px 0;">
+        <input type="text" id="search-input" class="trang-search-input" placeholder="🔍 Tìm theo số trang...">
+        <button class="trang-search-button" onclick="searchTrang()">Tìm kiếm</button>
+        <button class="trang-search-clear" onclick="clearSearch()">✖</button>
+    </div>
+
+    <div id="api-message" style="text-align:center;margin:10px 0;"></div>
+
+    <div id="trang-container"></div>
+</div>
+
+<script>
+    const msgBox = document.getElementById('api-message');
+    const container = document.getElementById('trang-container');
+    let allTrang = [];
+
+    // Lấy id_chuong từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const idChuong = urlParams.get('id_chuong');
+
+    function resolveTrangUrl(anh) {
+        if (!anh) return 'https://via.placeholder.com/120x170/2c3e50/ffffff?text=No+Image';
+        let p = String(anh).trim().replace(/\\/g, '/').replace(/^\/web_doc_truyen\//, '');
+        return '/web_doc_truyen/' + p;
+    }
+
+    function renderTable(data) {
+        if (!data.length) {
+            container.innerHTML = '<p class="empty-data">Chưa có trang nào.</p>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="trang-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Số trang</th>
+                        <th>Loại</th>
+                        <th>Xem trước</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.map(t => `
+                        <tr id="row-${t.id}">
+                            <td class="trang-id">${t.id}</td>
+                            <td class="trang-so">
+                                <span class="trang-badge">Trang ${t.so_trang}</span>
+                            </td>
+                            <td class="trang-type-text">
+                                ${t.loai === 'image' ? 'Ảnh' : 'Văn bản'}
+                            </td>
+                            <td class="trang-preview">
+                                ${t.loai === 'image' && t.anh
+                                    ? `<img src="${resolveTrangUrl(t.anh)}"
+                                            onerror="this.src='https://via.placeholder.com/120x170/2c3e50/ffffff?text=No+Image'">`
+                                    : t.loai === 'text'
+                                        ? `<span class="text-preview">${(t.noi_dung || '').substring(0, 30)}...</span>`
+                                        : `<span class="text-empty">Trống</span>`
+                                }
+                            </td>
+                            <td class="trang-actions">
+                                <a class="btn-edit" href="edit.html?id=${t.id}">Sửa</a>
+                                <button class="btn-delete" onclick="xoaTrang(${t.id}, ${t.so_trang})">Xóa</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    async function loadTrang() {
+        if (!idChuong) {
+            container.innerHTML = '<p class="empty-data">Không tìm thấy chương.</p>';
+            return;
+        }
+
+        try {
+            const res  = await fetch('../../../backend/api/trang/get_trang_by_chuong_api.php?id_chuong=' + idChuong);
+            const data = await res.json();
+
+            if (!data.success) {
+                container.innerHTML = '<p class="empty-data">Không tải được dữ liệu.</p>';
+                return;
+            }
+
+            allTrang = data.trangs || [];
+            renderTable(allTrang);
+
+        } catch (err) {
+            container.innerHTML = '<p class="empty-data">Lỗi kết nối server.</p>';
+        }
+    }
+
+    function searchTrang() {
+        const keyword = document.getElementById('search-input').value.trim();
+        if (!keyword) {
+            renderTable(allTrang);
+            return;
+        }
+        const filtered = allTrang.filter(t => String(t.so_trang).includes(keyword));
+        renderTable(filtered);
+    }
+
+    function clearSearch() {
+        document.getElementById('search-input').value = '';
+        renderTable(allTrang);
+    }
+
+    async function xoaTrang(id, soTrang) {
+        if (!confirm('Xác nhận xóa trang số ' + soTrang + '?')) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('id', id);
+
+            const res  = await fetch('../../../backend/api/trang/delete_trang_api.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                msgBox.style.color = 'green';
+                msgBox.textContent = data.message || 'Xóa thành công';
+
+                // Xóa row khỏi bảng không cần reload
+                document.getElementById('row-' + id)?.remove();
+                allTrang = allTrang.filter(t => t.id !== id);
+
+            } else {
+                msgBox.style.color = 'red';
+                msgBox.textContent = data.message || 'Xóa thất bại';
+            }
+
+        } catch (err) {
+            msgBox.style.color = 'red';
+            msgBox.textContent = 'Lỗi: ' + err.message;
+        }
+    }
+
+    loadTrang();
+</script>
+
+</body>
+</html>

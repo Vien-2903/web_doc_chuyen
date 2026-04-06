@@ -1,0 +1,267 @@
+/* ===== CSS QUẢN LÝ THỂ LOẠI ===== */
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-title {
+    font-size: 28px;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+
+.add-category-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-size: 20px;
+    color: #34495e;
+    margin-bottom: 15px;
+}
+
+.category-form {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-submit {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    height: 38px;
+}
+
+.form-submit:hover {
+    background: #0056b3;
+}
+
+.search-form {
+    margin: 25px 0 30px 0;
+    width: 100%;
+}
+
+.search-wrapper {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 1500px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 15px;
+    min-width: 400px;
+    transition: all 0.3s;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Nút tìm kiếm */
+.btn-search {
+    padding: 12px 28px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    white-space: nowrap;
+}
+
+.btn-search:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+
+/* Nút xóa tìm kiếm */
+.btn-clear {
+    padding: 12px 18px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.3s;
+    min-width: 44px;
+}
+
+.btn-clear:hover {
+    background: #545b62;
+    transform: translateY(-2px);
+}
+
+
+/* BẢNG DANH SÁCH */
+.table-container {
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+.category-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.category-table thead {
+    background: #f8f9fa;
+}
+
+.category-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.category-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    color: #6c757d;
+}
+
+.category-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Cột ID */
+.category-id {
+    font-weight: 600;
+    color: #2c3e50;
+    width: 60px;
+}
+
+/* Cột tên */
+.category-name {
+    font-weight: 500;
+    color: #343a40;
+}
+
+/* Cột thao tác */
+.action-cell {
+    width: 120px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-button, .delete-button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.edit-button {
+    background: #28a745;
+    color: white;
+}
+
+.edit-button:hover {
+    background: #218838;
+}
+
+.delete-button {
+    background: #dc3545;
+    color: white;
+}
+
+.delete-button:hover {
+    background: #c82333;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .theloai-container {
+        padding: 15px;
+    }
+    
+    .search-wrapper {
+        flex-direction: column;
+    }
+    
+    .search-input {
+        min-width: 100%;
+        width: 100%;
+    }
+    
+    .btn-search, .btn-clear {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
+    
+    .theloai-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .theloai-table th,
+    .theloai-table td {
+        padding: 12px 15px;
+        min-width: 120px;
+    }
+    
+    .action-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 140px;
+    }
+    
+    .action-cell a {
+        width: 100%;
+        text-align: center;
+        margin-right: 0;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .search-input {
+        min-width: 300px;
+    }
+}

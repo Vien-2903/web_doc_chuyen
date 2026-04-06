@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sửa Chương</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+    <link rel="stylesheet" href="../public/css/chuong.css">
+</head>
+<body>
+    <a href="index.php?page=admin&controller=chuong&action=index" class="btn-home">← Quay lại</a>
+    
+    <h1 class="form-title"> Sửa Chương</h1>
+
+    <div style="max-width:820px;margin:12px auto;text-align:left;padding:8px;border:1px solid #e9e9e9;border-radius:6px;background:#fafafa">
+        <label for="manual-chuong-id"><strong>Nhập ID chương (hoặc mở ?id=...):</strong></label>
+        <input id="manual-chuong-id" type="number" style="width:120px;margin-left:8px">
+        <button id="btn-load-chuong" type="button" style="margin-left:8px">Tải</button>
+        <span style="margin-left:12px">Hiện ID: <span id="show-id">-</span></span>
+    </div>
+
+    <div id="api-message" style="max-width:800px;margin:12px auto;text-align:center"></div>
+
+    <div class="user-form">
+        <form method="POST" id="chuong-form">
+            <input type="hidden" name="id" id="chuong-id">
+            <table>
+                <tr>
+                    <td>Truyện: <span class="required">*</span></td>
+                    <td>
+                        <select name="id_truyen" id="select-truyen" required>
+                            <option value="">-- Đang tải truyện... --</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Chương số: <span style="color: red;">*</span></td>
+                    <td>
+                        <input type="number" 
+                               name="so_chuong" 
+                               id="so-chuong"
+                               min="1"
+                               required>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Tiêu đề: <span class="required">*</span></td>
+                    <td>
+                        <input type="text" 
+                               name="tieu_de" 
+                               id="tieu-de"
+                               required>
+                    </td>
+                </tr>
+            </table>
+            
+            <div class="form-actions">
+                <button type="submit"> Cập nhật</button>
+                <a href="index.php?page=admin&controller=chuong&action=index" class="btn-back"> Hủy</a>
+            </div>
+        </form>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function(){
+        const msgBox = document.getElementById('api-message');
+        const selectTruyen = document.getElementById('select-truyen');
+        const chuongIdInput = document.getElementById('chuong-id');
+        const soChuongInput = document.getElementById('so-chuong');
+        const tieuDeInput = document.getElementById('tieu-de');
+
+        // load truyens
+        async function loadTruyens(){
+            try{
+                const res = await fetch('../../../backend/api/truyen/truyen_api.php');
+                const json = await res.json();
+                const list = (json && (json.data || json.stories)) ? (json.data || json.stories) : [];
+                selectTruyen.innerHTML = '<option value="">-- Chọn truyện --</option>';
+                list.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.ten_truyen || t.tenTruyen || ('Truyen ' + t.id);
+                    selectTruyen.appendChild(opt);
+                });
+            } catch(err){
+                console.error('Lỗi tải truyện', err);
+                selectTruyen.innerHTML = '<option value="">Không tải được truyện</option>';
+                msgBox.style.color='red'; msgBox.textContent = 'Không tải được danh sách truyện.';
+            }
+        }
+
+        // fetch chapter by id and fill
+        async function loadChuong(id){
+            try{
+                const res = await fetch(`../../../backend/api/chuong/get_chuong_api.php?id=${id}`);
+                const json = await res.json();
+                if(json && json.chuong){
+                    const c = json.chuong;
+                    chuongIdInput.value = c.id || id;
+                    soChuongInput.value = c.so_chuong || '';
+                    tieuDeInput.value = c.tieu_de || '';
+                    // wait for truyens loaded then select
+                    await loadTruyens();
+                    selectTruyen.value = c.id_truyen || '';
+                } else {
+                    msgBox.style.color='red'; msgBox.textContent = json.message || 'Không tìm thấy chương';
+                }
+            } catch(err){
+                console.error('Lỗi load chương', err);
+                msgBox.style.color='red'; msgBox.textContent = 'Lỗi khi tải chương';
+            }
+        }
+
+        // main: if ?id= in URL, load it; otherwise allow manual load
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+        const manualInput = document.getElementById('manual-chuong-id');
+        const btnLoad = document.getElementById('btn-load-chuong');
+        const showId = document.getElementById('show-id');
+
+        btnLoad.addEventListener('click', async function(){
+            const mid = manualInput.value.trim();
+            if(!mid) return alert('Nhập ID chương');
+            await loadChuong(mid);
+            showId.textContent = mid;
+        });
+
+        if(id){
+            await loadChuong(id);
+            showId.textContent = id;
+        } else {
+            await loadTruyens();
+        }
+
+        // submit handler
+        const form = document.getElementById('chuong-form');
+        form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            msgBox.textContent = '';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            const fd = new FormData(form);
+            try{
+                const res = await fetch('../../../backend/api/chuong/edit_chuong_api.php', { method: 'POST', body: fd });
+                const json = await res.json();
+                if(res.ok && json.success){
+                    msgBox.style.color = 'green';
+                    msgBox.textContent = json.message || 'Cập nhật thành công';
+                    setTimeout(()=>{ window.location.href = 'index.php?page=admin&controller=chuong&action=index&success=edit'; }, 800);
+                } else {
+                    msgBox.style.color = 'red';
+                    msgBox.textContent = json.message || 'Lỗi khi cập nhật';
+                }
+            } catch(err){
+                console.error(err);
+                msgBox.style.color = 'red';
+                msgBox.textContent = 'Lỗi kết nối: ' + err.message;
+            } finally{ submitBtn.disabled = false; }
+        });
+    });
+    </script>
+</body>
+</html>

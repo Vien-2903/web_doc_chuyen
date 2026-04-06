@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Xóa Thể Loại</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+</head>
+<body>
+
+<a href="index.php?page=admin&controller=theloai&action=index" class="btn-home">← Quay lại</a>
+
+<h1 class="form-title">Xóa Thể Loại</h1>
+
+<div class="delete-box">
+    <div class="info-row">
+        <label><strong>Nhập ID:</strong></label>
+        <input id="tl-id" type="number">
+        <button id="btn-load">Tải</button>
+    </div>
+
+    <div id="tl-info" style="display:none;margin-top:15px">
+        <p><strong>ID:</strong> <span id="info-id"></span></p>
+        <p><strong>Tên thể loại:</strong> <span id="info-ten"></span></p>
+
+        <button id="btn-delete" style="background:red;color:#fff;padding:6px 10px">
+            Xóa
+        </button>
+
+        <span id="msg" style="margin-left:10px"></span>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+
+    const btnLoad = document.getElementById('btn-load');
+    const idInput = document.getElementById('tl-id');
+    const infoBox = document.getElementById('tl-info');
+
+    const infoId = document.getElementById('info-id');
+    const infoTen = document.getElementById('info-ten');
+    const msg = document.getElementById('msg');
+
+    const btnDelete = document.getElementById('btn-delete');
+
+    // LOAD
+    btnLoad.addEventListener('click', async () => {
+        const id = idInput.value.trim();
+        if(!id) return alert('Nhập ID');
+
+        const res = await fetch(`../../../backend/api/theloai/get_theloai_api.php?id=${id}`);
+        const data = await res.json();
+
+        if(data.success){
+            infoId.textContent = data.data.id;
+            infoTen.textContent = data.data.ten_theloai;
+            infoBox.style.display = 'block';
+        } else {
+            alert(data.message);
+        }
+    });
+
+    // DELETE
+    btnDelete.addEventListener('click', async () => {
+        const id = infoId.textContent;
+        if(!confirm('Xóa thể loại ID=' + id + '?')) return;
+
+        const fd = new FormData();
+        fd.append('id', id);
+
+        const res = await fetch('../../../backend/api/theloai/delete_theloai_api.php', {
+            method: 'POST',
+            body: fd
+        });
+
+        const data = await res.json();
+
+        if(data.success){
+            msg.style.color = 'green';
+            msg.textContent = 'Đã xóa';
+        } else {
+            msg.style.color = 'red';
+            msg.textContent = data.message;
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

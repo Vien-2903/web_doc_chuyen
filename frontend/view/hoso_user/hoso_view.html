@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ cá nhân</title>
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/profile.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/home.css?v=20260403-2">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloai_user.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <h2>Hồ Sơ Cá Nhân</h2>
+            <p>Thông tin chi tiết của bạn</p>
+        </div>
+
+        <div id="api-message"></div>
+
+        <div class="profile-content" id="profile-content" style="display: none;">
+            <div class="avatar-section">
+                <img id="avatar-image" src="" alt="Avatar" class="profile-avatar">
+                <h3 id="display-name"></h3>
+                <span id="role-badge" class="role-badge"></span>
+            </div>
+
+            <div class="info-section">
+                <div class="info-group">
+                    <div class="info-item">
+                        <span class="info-label">Email:</span>
+                        <span class="info-value" id="email"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Tên đăng nhập:</span>
+                        <span class="info-value" id="ten-dang-nhap"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Họ và tên:</span>
+                        <span class="info-value" id="ho-ten"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Số điện thoại:</span>
+                        <span class="info-value" id="so-dien-thoai"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Giới tính:</span>
+                        <span class="info-value" id="gioi-tinh"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">Ngày sinh:</span>
+                        <span class="info-value" id="ngay-sinh"></span>
+                    </div>
+
+                    <div class="info-item full-width">
+                        <span class="info-label">Địa chỉ:</span>
+                        <span class="info-value" id="dia-chi"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-actions">
+            <a href="/web_doc_truyen/frontend/view/hoso_user/hoso_detail.html" class="btn-edit">Cập nhật thông tin</a>
+        </div>
+    </div>
+
+    <script>
+        function setMessage(type, text) {
+            var box = document.getElementById('api-message');
+            box.className = type === 'error' ? 'error-message' : 'success-message';
+            box.textContent = text;
+        }
+
+        function renderEmpty() {
+            return '<em class="empty">Chưa cập nhật</em>';
+        }
+
+        function normalizeGender(value) {
+            if (!value) {
+                return '';
+            }
+
+            var map = {
+                nam: 'Nam',
+                nu: 'Nữ',
+                khac: 'Khác'
+            };
+
+            return map[value] || value;
+        }
+
+        function formatDate(value) {
+            if (!value) {
+                return '';
+            }
+
+            var parts = value.split('-');
+            if (parts.length !== 3) {
+                return value;
+            }
+
+            return parts[2] + '/' + parts[1] + '/' + parts[0];
+        }
+
+        function setValue(id, value) {
+            var el = document.getElementById(id);
+            if (!el) {
+                return;
+            }
+
+            if (value) {
+                el.textContent = value;
+            } else {
+                el.innerHTML = renderEmpty();
+            }
+        }
+
+        function resolveAvatarUrl(fileName, userName) {
+            if (!fileName) {
+                return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'User') + '&background=3498db&color=fff&size=200';
+            }
+
+            var normalized = String(fileName).trim().replace(/\\/g, '/');
+            if (normalized.indexOf('http://') === 0 || normalized.indexOf('https://') === 0 || normalized.indexOf('/') === 0) {
+                return normalized;
+            }
+
+            var parts = normalized.split('/').filter(Boolean);
+            var fileOnly = parts.length ? parts[parts.length - 1] : '';
+            if (!fileOnly) {
+                return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(userName || 'User') + '&background=3498db&color=fff&size=200';
+            }
+
+            return '/web_doc_truyen/backend/uploads/avatar/' + fileOnly;
+        }
+
+        function loadHeader() {
+            fetch('/web_doc_truyen/frontend/view/layouts/user/header.html')
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Header load failed');
+                    }
+                    return response.text();
+                })
+                .then(function (html) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    var header = doc.querySelector('header');
+                    var scripts = doc.querySelectorAll('script');
+
+                    if (!header) {
+                        throw new Error('Missing header element');
+                    }
+
+                    document.getElementById('header-placeholder').innerHTML = header.outerHTML;
+
+                    scripts.forEach(function (script) {
+                        var runtimeScript = document.createElement('script');
+
+                        if (script.src) {
+                            runtimeScript.src = script.src;
+                        } else {
+                            runtimeScript.textContent = script.textContent;
+                        }
+
+                        document.body.appendChild(runtimeScript);
+                    });
+                })
+                .catch(function (error) {
+                    console.error('Lỗi tải header:', error);
+                });
+        }
+
+        function loadProfile() {
+            fetch('/web_doc_truyen/backend/api/profile/profile_api.php', {
+                method: 'GET',
+                credentials: 'include'
+            })
+                .then(function (response) {
+                    return response.json().then(function (data) {
+                        return {
+                            status: response.status,
+                            payload: data
+                        };
+                    });
+                })
+                .then(function (result) {
+                    if (result.status !== 200 || !result.payload.success) {
+                        throw new Error(result.payload.message || 'Không thể lấy thông tin người dùng');
+                    }
+
+                    var user = result.payload.data || {};
+                    var profile = user.profile || {};
+                    var tenDangNhap = user.ten_dang_nhap || '';
+                    var hoTen = profile.ho_ten || '';
+
+                    var avatar = resolveAvatarUrl(profile.avatar, tenDangNhap);
+
+                    document.getElementById('avatar-image').src = avatar;
+                    document.getElementById('display-name').textContent = hoTen || tenDangNhap;
+
+                    var roleBadge = document.getElementById('role-badge');
+                    var role = user.vai_tro || 'user';
+                    roleBadge.classList.add(role);
+                    roleBadge.textContent = role === 'admin' ? 'Quản trị viên' : 'Người dùng';
+
+                    setValue('email', user.email || '');
+                    setValue('ten-dang-nhap', tenDangNhap);
+                    setValue('ho-ten', hoTen);
+                    setValue('so-dien-thoai', profile.so_dien_thoai || '');
+                    setValue('gioi-tinh', normalizeGender(profile.gioi_tinh || ''));
+                    setValue('ngay-sinh', formatDate(profile.ngay_sinh || ''));
+                    setValue('dia-chi', profile.dia_chi || '');
+
+                    document.getElementById('profile-content').style.display = 'flex';
+                })
+                .catch(function (error) {
+                    setMessage('error', error.message || 'Không thể tải hồ sơ người dùng');
+                });
+        }
+
+        loadHeader();
+        loadProfile();
+    </script>
+</body>
+</html>

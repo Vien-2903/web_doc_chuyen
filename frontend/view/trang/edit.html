@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Sửa Trang</title>
+    <link rel="stylesheet" href="../../public/css/admin.css">
+    <link rel="stylesheet" href="../../public/css/trang.css">
+</head>
+<body>
+
+<a href="../../index.php?page=admin&controller=trang&action=index" class="btn-home">
+    ← Quay lại
+</a>
+
+<h1 class="form-title">Sửa Trang</h1>
+
+<div class="user-form">
+    <form id="formSuaTrang" enctype="multipart/form-data">
+        <table>
+            <tr>
+                <td>Trang số: <span class="required">*</span></td>
+                <td>
+                    <input type="number" name="so_trang" id="so_trang" min="1" required>
+                </td>
+            </tr>
+            <tr>
+                <td>Loại: <span class="required">*</span></td>
+                <td>
+                    <select name="loai" id="loai" required>
+                        <option value="image">Ảnh</option>
+                        <option value="text">Văn bản</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Nội dung:</td>
+                <td>
+                    <textarea name="noi_dung" id="noi_dung" rows="6" placeholder="Nhập nội dung trang..."></textarea>
+                </td>
+            </tr>
+            <tr>
+                <td>Ảnh hiện tại:</td>
+                <td>
+                    <img id="anh-hien-tai"
+                         src=""
+                         style="max-width:250px;border-radius:8px;display:none;margin-bottom:10px;"
+                         onerror="this.src='https://via.placeholder.com/250x350/2c3e50/ffffff?text=No+Image'">
+                    <span id="no-anh" style="color:#999;">Chưa có ảnh</span>
+                </td>
+            </tr>
+            <tr>
+                <td>Đổi ảnh:</td>
+                <td>
+                    <input type="file" name="anh" accept="image/*">
+                    <small style="color:#666;">Để trống nếu không đổi ảnh</small>
+                </td>
+            </tr>
+        </table>
+
+        <div class="form-actions">
+            <button type="submit">Cập nhật</button>
+            <a href="../../index.php?page=admin&controller=trang&action=index" class="btn-back">Hủy</a>
+        </div>
+    </form>
+</div>
+
+<div id="api-message" style="text-align:center;margin-top:10px;"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const form    = document.getElementById('formSuaTrang');
+    const msgBox  = document.getElementById('api-message');
+
+    // Lấy id từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('id');
+
+    if (!id) {
+        msgBox.style.color = 'red';
+        msgBox.textContent = 'Không tìm thấy ID trang';
+        return;
+    }
+
+    // Load thông tin trang hiện tại
+    async function loadTrang() {
+        try {
+            const res  = await fetch('../../../backend/api/trang/get_trang_api.php?id=' + id);
+            const data = await res.json();
+
+            if (!data.success) {
+                msgBox.style.color = 'red';
+                msgBox.textContent = data.message || 'Không tải được dữ liệu';
+                return;
+            }
+
+            const t = data.trang;
+
+            // Điền dữ liệu vào form
+            document.getElementById('so_trang').value  = t.so_trang || '';
+            document.getElementById('noi_dung').value  = t.noi_dung || '';
+
+            // Set loại
+            const selectLoai = document.getElementById('loai');
+            for (let opt of selectLoai.options) {
+                if (opt.value === t.loai) opt.selected = true;
+            }
+
+            // Hiện ảnh nếu có
+            const anhEl  = document.getElementById('anh-hien-tai');
+            const noAnh  = document.getElementById('no-anh');
+            if (t.anh) {
+                anhEl.src          = '/web_doc_truyen/' + t.anh.replace(/^\/web_doc_truyen\//, '');
+                anhEl.style.display = 'block';
+                noAnh.style.display = 'none';
+            }
+
+        } catch (err) {
+            msgBox.style.color = 'red';
+            msgBox.textContent = 'Lỗi tải dữ liệu: ' + err.message;
+        }
+    }
+
+    loadTrang();
+
+    // Submit cập nhật
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        msgBox.textContent = '';
+        const btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+
+        const formData = new FormData(form);
+        formData.append('id', id);
+
+        try {
+            const res  = await fetch('../../../backend/api/trang/edit_trang_api.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                msgBox.style.color = 'green';
+                msgBox.textContent = data.message || 'Cập nhật thành công';
+
+                setTimeout(function () {
+                    window.location.href = '../../index.php?page=admin&controller=trang&action=index';
+                }, 800);
+
+            } else {
+                msgBox.style.color = 'red';
+                msgBox.textContent = data.message || 'Cập nhật thất bại';
+            }
+
+        } catch (err) {
+            msgBox.style.color = 'red';
+            msgBox.textContent = 'Lỗi: ' + err.message;
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

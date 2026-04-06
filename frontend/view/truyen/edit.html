@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sửa Truyện</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+    <link rel="stylesheet" href="../public/css/truyen.css">
+</head>
+<body>
+    <a href="index.php?page=admin&controller=truyen&action=index" class="btn-home">← Quay lại</a>
+    
+    <h1 class="form-title">Sửa Truyện</h1>
+
+    <div class="user-form">
+        <div style="max-width:800px;margin:12px auto;text-align:left;padding:8px;border:1px solid #e0e0e0;border-radius:6px;background:#fafafa">
+            <label for="manual-id"><strong>Nhập ID truyện để sửa (hoặc mở ?id=...):</strong></label>
+            <input type="number" id="manual-id" placeholder="VD: 123" style="width:120px;margin-left:8px">
+            <button type="button" id="btn-load" style="margin-left:8px">Tải</button>
+            <span id="current-info" style="margin-left:18px;color:#333">ID: <span id="display-id">-</span> • Tác giả: <span id="display-author">-</span></span>
+        </div>
+        <form method="POST" enctype="multipart/form-data">
+            <!-- ID ẩn -->
+            <input type="hidden" name="id" id="truyen-id">
+
+            <table>
+                <tr>
+                    <td>Tác giả:</td>
+                    <td>
+                        <select name="id_tacgia" id="select-tacgia" required>
+                            <option value="">-- Đang tải... --</option>
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Tên truyện:</td>
+                    <td>
+                        <input type="text" name="ten_truyen" id="ten-truyen" required>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Mô tả:</td>
+                    <td>
+                        <textarea name="mo_ta" id="mo-ta" rows="4" class="form-textarea"></textarea>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Trạng thái:</td>
+                    <td>
+                        <select name="trang_thai" id="trang-thai" required>
+                            <option value="đang ra">Đang ra</option>
+                            <option value="hoàn thành">Hoàn thành</option>
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Ảnh bìa hiện tại:</td>
+                    <td>
+                        <img id="anh-bia-preview" src="" alt="Ảnh bìa" style="display:none; width:120px; margin-bottom:8px"><br>
+                        <input type="file" name="anh_bia" accept="image/*">
+                        <small>Để trống nếu không đổi ảnh</small>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Thể loại:</td>
+                    <td>
+                        <div class="theloai-grid" id="theloai-grid">
+                            Đang tải...
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            
+            <div class="form-actions">
+                <button type="submit">Cập nhật</button>
+                <a href="index.php?page=admin&controller=truyen&action=index" class="btn-back">Hủy</a>
+            </div>
+        </form>
+    </div>
+
+    <div id="api-message" style="max-width:800px;margin:12px auto;text-align:center"></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        const msgBox = document.getElementById('api-message');
+
+        // helper to update current display
+        function setCurrentInfo(id, author){
+            document.getElementById('display-id').textContent = id || '-';
+            document.getElementById('display-author').textContent = author || '-';
+        }
+
+        // Lấy ID từ URL (nếu có)
+        const urlParams = new URLSearchParams(window.location.search);
+        const truyenId = urlParams.get('id');
+
+        // load button (manual)
+        const manualInput = document.getElementById('manual-id');
+        const btnLoad = document.getElementById('btn-load');
+        btnLoad.addEventListener('click', async function(){
+            const id = manualInput.value.trim();
+            if(!id) return alert('Nhập ID truyện');
+            document.getElementById('truyen-id').value = id;
+            setCurrentInfo(id, '...');
+            // fetch truyen first so we can preselect author when loading authors
+            await loadTruyen(id);
+            await Promise.all([loadTacGia(), loadTheLoai()]);
+        });
+
+        manualInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); btnLoad.click(); } });
+
+        if (truyenId) {
+            document.getElementById('truyen-id').value = truyenId;
+            setCurrentInfo(truyenId, '...');
+            // fetch truyen first then load authors & categories
+            await loadTruyen(truyenId);
+            await Promise.all([loadTacGia(), loadTheLoai()]);
+        } else {
+            // just load authors and categories (no preselection)
+            await Promise.all([loadTacGia(), loadTheLoai()]);
+        }
+
+        // Submit form
+        const form = document.querySelector('form');
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            msgBox.textContent = '';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch('../../../backend/api/truyen/edit_truyen_api.php', {
+                    method: 'POST',
+                    body: new FormData(form)
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    msgBox.style.color = 'green';
+                    msgBox.textContent = data.message || 'Cập nhật thành công';
+                    setTimeout(() => {
+                        window.location.href = 'index.php?page=admin&controller=truyen&action=index&success=edit';
+                    }, 900);
+                } else {
+                    msgBox.style.color = 'red';
+                    msgBox.textContent = data.message || 'Lỗi khi cập nhật';
+                    if (data.errors) msgBox.textContent += ': ' + data.errors.join('; ');
+                }
+            } catch (err) {
+                msgBox.style.color = 'red';
+                msgBox.textContent = 'Lỗi kết nối: ' + err.message;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    });
+
+    // Load thông tin truyện
+    async function loadTruyen(id) {
+        try {
+            const res = await fetch(`../../../backend/api/truyen/get_truyen_api.php?id=${id}`);
+            const data = await res.json();
+                if (data.success && data.truyen) {
+                    const t = data.truyen;
+                    document.getElementById('ten-truyen').value = t.ten_truyen || '';
+                    document.getElementById('mo-ta').value = t.mo_ta || '';
+                    document.getElementById('trang-thai').value = t.trang_thai || '';
+                    document.getElementById('select-tacgia').setAttribute('data-selected-id', t.id_tacgia);
+
+                    // Hiện ảnh bìa (nếu đường dẫn là relative trong DB giữ nguyên, else show as-is)
+                    if (t.anh_bia) {
+                        const img = document.getElementById('anh-bia-preview');
+                        // prefer using stored path directly if it contains uploads/
+                        if (t.anh_bia.indexOf('uploads/') !== -1) {
+                            img.src = '/web_doc_truyen/frontend/public/' + t.anh_bia;
+                        } else {
+                            img.src = t.anh_bia;
+                        }
+                        img.style.display = 'block';
+                    }
+
+                    // Tick thể loại đã chọn
+                    if (Array.isArray(t.theloai_ids)) {
+                        t.theloai_ids.forEach(tid => {
+                            const cb = document.querySelector(`input[name="theloai_ids[]"][value="${tid}"]`);
+                            if (cb) cb.checked = true;
+                        });
+                    }
+
+                    // Update visible current info (author + id)
+                    const authorName = t.ten_tacgia || t.but_danh || '';
+                    setCurrentInfo(t.id || id, authorName);
+                }
+        } catch (err) {
+            console.error('Lỗi load truyện:', err);
+        }
+    }
+
+    // Load tác giả
+    async function loadTacGia() {
+        try {
+            const res = await fetch('../../../backend/api/tacgia/tacgia_list_api.php');
+            const data = await res.json();
+            const select = document.getElementById('select-tacgia');
+            if (data.success && Array.isArray(data.data)) {
+                const selectedId = select.getAttribute('data-selected-id') || '';
+                select.innerHTML = '<option value="">-- Chọn tác giả --</option>';
+                data.data.forEach(tg => {
+                    const opt = document.createElement('option');
+                    opt.value = tg.id;
+                    opt.textContent = tg.ten_tacgia;
+                    if (String(tg.id) === String(selectedId)) opt.selected = true;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error('Lỗi load tác giả:', err);
+        }
+    }
+
+    // Load thể loại
+    async function loadTheLoai() {
+        try {
+            const res = await fetch('../../../backend/api/truyen/get_theloai_api.php');
+            const data = await res.json();
+            const grid = document.getElementById('theloai-grid');
+            if (data.success && Array.isArray(data.theloais)) {
+                grid.innerHTML = '';
+                data.theloais.forEach(tl => {
+                    grid.innerHTML += `
+                        <label>
+                            <input type="checkbox" name="theloai_ids[]" value="${tl.id}">
+                            ${tl.ten_theloai}
+                        </label>`;
+                });
+            }
+        } catch (err) {
+            console.error('Lỗi load thể loại:', err);
+        }
+    }
+    </script>
+</body>
+</html>

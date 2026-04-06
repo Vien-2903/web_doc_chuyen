@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Truyện</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+</head>
+<body>
+    <a href="index.php?page=admin&controller=truyen&action=index" class="btn-home">← Quay lại</a>
+    
+    <h1 class="form-title">Thêm Truyện Mới</h1>
+    <!-- PHP error handling removed -->
+    <div class="user-form">
+        <form method="POST" enctype="multipart/form-data">
+            <table>
+                <tr>
+                    <td>Tác giả:</td>
+                    <td>
+                        <select name="id_tacgia" required>
+                            <option value="">-- Chọn tác giả --</option>
+                            <!-- Danh sách tác giả được loại bỏ (PHP) -->
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Tên truyện:</td>
+                    <td><input type="text" name="ten_truyen" required></td>
+                </tr>
+
+                <tr>
+                    <td>Mô tả:</td>
+                    <td>
+                        <textarea name="mo_ta" rows="4" class="form-textarea"></textarea>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Trạng thái:</td>
+                    <td>
+                        <select name="trang_thai" required>
+                            <option value="đang ra">Đang ra</option>
+                            <option value="hoàn thành">Hoàn thành</option>
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>Ảnh bìa:</td>
+                    <td><input type="file" name="anh_bia" accept="image/*"></td>
+                </tr>
+
+                <!-- ===== THÊM THỂ LOẠI===== -->
+               <tr>
+   <tr>
+    <td>Thể loại:</td>
+    <td>
+        <div class="theloai-grid">
+            <!-- Danh sách thể loại bị loại bỏ (PHP) -->
+        </div>
+    </td>
+</tr>
+                <!-- ===== KẾT THÚC ===== -->
+
+            </table>
+            
+            <div class="form-actions">
+                <button type="submit">Thêm truyện</button>
+                <a href="index.php?page=admin&controller=truyen&action=index" class="btn-back">Hủy</a>
+            </div>
+        </form>
+    </div>
+    <div id="api-message" style="max-width:800px;margin:12px auto;text-align:center"></div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        // Load authors into the select via API
+        async function loadAuthors(){
+            const sel = document.querySelector('select[name="id_tacgia"]');
+            if(!sel) return;
+            sel.innerHTML = '<option value="">-- Đang tải tác giả... --</option>';
+            try{
+                const res = await fetch('../../../backend/api/tacgia/tacgia_list_api.php', { method: 'GET', cache: 'no-store' });
+                if(!res.ok) throw new Error('HTTP ' + res.status);
+                const json = await res.json();
+                if(json && json.success && Array.isArray(json.data) && json.data.length){
+                    sel.innerHTML = '<option value="">-- Chọn tác giả --</option>';
+                    json.data.forEach(function(a){
+                        const opt = document.createElement('option');
+                        opt.value = a.id;
+                        opt.textContent = a.ten_tacgia || a.but_danh || ('Tác giả ' + a.id);
+                        sel.appendChild(opt);
+                    });
+                } else {
+                    sel.innerHTML = '<option value="">Không có tác giả</option>';
+                }
+            } catch(err){
+                console.error('Lỗi khi tải danh sách tác giả:', err);
+                sel.innerHTML = '<option value="">Không thể tải tác giả</option>';
+                const msgBox = document.getElementById('api-message');
+                if(msgBox){ msgBox.style.color = 'red'; msgBox.textContent = 'Không tải được danh sách tác giả (kiểm tra API).'; }
+            }
+        }
+        loadAuthors();
+
+        const form = document.querySelector('form');
+        const msgBox = document.getElementById('api-message');
+        form.addEventListener('submit', async function(e){
+            e.preventDefault();
+            msgBox.textContent = '';
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+
+            const fd = new FormData(form);
+
+            try {
+                const res = await fetch('../../../backend/api/truyen/add_truyen_api.php', {
+                    method: 'POST',
+                    body: fd
+                });
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    msgBox.style.color = 'green';
+                    msgBox.textContent = data.message || 'Thêm truyện thành công';
+                    // redirect to admin list after short delay
+                    setTimeout(()=>{
+                        window.location.href = 'index.php?page=admin&controller=truyen&action=index&success=add';
+                    }, 900);
+                } else {
+                    msgBox.style.color = 'red';
+                    msgBox.textContent = (data && data.message) ? data.message : 'Lỗi khi thêm truyện';
+                    if (data && data.errors && Array.isArray(data.errors)) {
+                        msgBox.textContent += ': ' + data.errors.join('; ');
+                    }
+                }
+            } catch (err) {
+                msgBox.style.color = 'red';
+                msgBox.textContent = 'Lỗi kết nối: ' + err.message;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    });
+    </script>
+</body>
+</html>

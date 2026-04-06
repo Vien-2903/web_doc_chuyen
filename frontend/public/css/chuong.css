@@ -1,0 +1,115 @@
+/* ===== CSS CHO CHƯƠNG ===== */
+
+/* Required field */
+.required {
+    color: red;
+}
+
+/* Form tìm kiếm chương */
+.chuong-search-form {
+    margin: 20px 0;
+}
+
+.chuong-search-container {
+    display: flex;
+    gap: 10px;
+    max-width: 1500px;
+}
+
+.chuong-search-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.chuong-search-button {
+    padding: 10px 20px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.chuong-search-button:hover {
+    background: #0056b3;
+}
+
+.chuong-search-clear {
+    padding: 10px 20px;
+    background: #6c757d;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background 0.3s;
+}
+
+.chuong-search-clear:hover {
+    background: #545b62;
+}
+
+.chuong-search-result {
+    margin-top: 10px;
+    color: #666;
+}
+
+/* Badge chương số */
+.chuong-badge {
+    background: #3498db;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Ngày đăng */
+.chuong-date-cell {
+    color: #7f8c8d;
+    font-size: 14px;
+}
+
+.chuong-time {
+    color: #95a5a6;
+    font-size: 12px;
+}
+
+/* Tên truyện trong table */
+.chuong-truyen-name {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Button quản lý trang */
+.btn-manage-page {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-block;
+    font-weight: 500;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-manage-page:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.4);
+}
+
+/* Link xóa màu đỏ */
+.btn-delete {
+    color: #e74c3c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chuong-search-container {
+        flex-direction: column;
+    }
+}

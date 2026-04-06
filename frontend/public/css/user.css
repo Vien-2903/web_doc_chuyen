@@ -1,0 +1,175 @@
+/* ===== FORM IMPROVEMENTS ===== */
+.user-form {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.user-form input:focus,
+.user-form select:focus {
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+    transform: translateY(-2px);
+}
+
+.user-form button {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    transition: all 0.3s;
+}
+
+.user-form button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+}
+/* ===== THÊM HIỆU ỨNG CHO BADGE ===== */
+.status-badge {
+    transition: all 0.3s;
+    cursor: default;
+}
+
+.status-badge:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ===== DETAIL PAGE ACTIONS ===== */
+.detail-actions {
+    text-align: center;
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.detail-actions a {
+    flex: 1;
+    max-width: 150px;
+}
+
+
+
+/* Nút bình luận */
+.btn-comment-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #3498db;
+    font-size: 20px;
+    transition: all 0.2s ease;
+    padding: 5px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.btn-comment-action:hover {
+    transform: scale(1.2);
+    color: #2980b9;
+}
+
+/* Card cần có flex column để actions xuống dưới */
+/* ===== FIX STORY CARD & ACTIONS ===== */
+
+/* Card phải có flex column để actions xuống dưới */
+.story-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+}
+
+.story-card > a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Actions section - QUAN TRỌNG */
+.story-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+    margin-top: auto;
+    border-top: 1px solid #e0e0e0; /* ĐÂY LÀ BORDER BỊ MẤT */
+    min-height: 45px; /* Đảm bảo chiều cao tối thiểu */
+}
+
+.story-actions-left {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.story-views {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+/* Nút yêu thích */
+
+
+/* Nút bình luận */
+.btn-comment-action {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #3498db;
+    font-size: 20px;
+    transition: all 0.2s ease;
+    padding: 5px;
+    text-decoration: none;
+    display: inline-flex; /* ĐỔI từ flex sang inline-flex */
+    align-items: center;
+    line-height: 1;
+}
+
+.btn-comment-action:hover {
+    transform: scale(1.2);
+    color: #2980b9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .story-actions {
+        padding: 10px 12px;
+    }
+    
+    .story-actions-left {
+        gap: 12px;
+    }
+    
+    .btn-favorite-action,
+    .btn-comment-action {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .story-actions {
+        padding: 8px 10px;
+    }
+    
+    .story-actions-left {
+        gap: 10px;
+    }
+    
+    .story-views {
+        font-size: 12px;
+    }
+    
+    .btn-favorite-action,
+    .btn-comment-action {
+        font-size: 16px;
+    }
+}

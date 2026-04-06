@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Sửa Thể Loại</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+</head>
+<body>
+
+<a href="index.php?page=admin&controller=theloai&action=index" class="btn-home">← Quay lại</a>
+
+<h1 class="form-title">Sửa Thể Loại</h1>
+
+<div class="user-form">
+
+    <div style="margin-bottom:10px">
+        <input type="number" id="tl-id" placeholder="Nhập ID">
+        <button id="btn-load">Tải</button>
+    </div>
+
+    <form id="form-edit">
+        <input type="hidden" name="id" id="id">
+
+        <table>
+            <tr>
+                <td>Tên thể loại:</td>
+                <td>
+                    <input type="text" name="ten_theloai" id="ten">
+                </td>
+            </tr>
+        </table>
+
+        <button type="submit">Cập nhật</button>
+        <span id="msg"></span>
+    </form>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+
+    const btnLoad = document.getElementById('btn-load');
+    const idInput = document.getElementById('tl-id');
+
+    const idField = document.getElementById('id');
+    const tenField = document.getElementById('ten');
+    const msg = document.getElementById('msg');
+
+    // LOAD
+    btnLoad.addEventListener('click', async () => {
+        const id = idInput.value.trim();
+        if(!id) return alert('Nhập ID');
+
+        const res = await fetch(`../../../backend/api/theloai/get_theloai_api.php?id=${id}`);
+        const data = await res.json();
+
+        if(data.success){
+            idField.value = data.data.id;
+            tenField.value = data.data.ten_theloai;
+        } else {
+            alert(data.message);
+        }
+    });
+
+    // UPDATE
+    document.getElementById('form-edit').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+
+        const fd = new FormData(e.target);
+
+        const res = await fetch('../../../backend/api/theloai/edit_theloai_api.php', {
+            method: 'POST',
+            body: fd
+        });
+
+        const data = await res.json();
+
+        if(data.success){
+            msg.style.color = 'green';
+            msg.textContent = 'Cập nhật thành công';
+        } else {
+            msg.style.color = 'red';
+            msg.textContent = data.message;
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

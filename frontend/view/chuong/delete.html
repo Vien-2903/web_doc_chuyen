@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xóa Chương</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+    <link rel="stylesheet" href="../public/css/chuong.css">
+    <style>
+        .delete-box{max-width:820px;margin:20px auto;padding:16px;border:1px solid #eee;border-radius:6px;background:#fff}
+        .info-row{margin:8px 0}
+    </style>
+</head>
+<body>
+    <a href="index.php?page=admin&controller=chuong&action=index" class="btn-home">← Quay lại</a>
+    <h1 class="form-title">Xóa Chương</h1>
+
+    <div class="delete-box">
+        <div class="info-row">
+            <label for="del-id"><strong>Nhập ID chương:</strong></label>
+            <input id="del-id" type="number" style="width:140px;margin-left:8px">
+            <button id="btn-fetch" type="button" style="margin-left:8px">Tải</button>
+        </div>
+
+        <div id="chuong-info" style="border-top:1px solid #f0f0f0;padding-top:12px;display:none">
+            <p><strong>ID:</strong> <span id="info-id"></span></p>
+            <p><strong>Truyện:</strong> <span id="info-truyen"></span></p>
+            <p><strong>Chương:</strong> <span id="info-so"></span></p>
+            <p><strong>Tiêu đề:</strong> <span id="info-tieu"></span></p>
+            <p><strong>Ngày đăng:</strong> <span id="info-ngay"></span></p>
+            <div style="margin-top:12px">
+                <button id="btn-delete" style="background:#c0392b;color:#fff;padding:8px 12px;border:none;border-radius:4px">Xóa chương</button>
+                <span id="del-status" style="margin-left:12px"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const fetchBtn = document.getElementById('btn-fetch');
+        const delIdInput = document.getElementById('del-id');
+        const infoBox = document.getElementById('chuong-info');
+        const infoId = document.getElementById('info-id');
+        const infoTruyen = document.getElementById('info-truyen');
+        const infoSo = document.getElementById('info-so');
+        const infoTieu = document.getElementById('info-tieu');
+        const infoNgay = document.getElementById('info-ngay');
+        const deleteBtn = document.getElementById('btn-delete');
+        const statusSpan = document.getElementById('del-status');
+
+        async function fetchChuong(id){
+            try{
+                const res = await fetch(`../../../backend/api/chuong/get_chuong_api.php?id=${id}`);
+                const json = await res.json();
+                if(json && json.chuong){
+                    const c = json.chuong;
+                    infoId.textContent = c.id || id;
+                    infoTruyen.textContent = c.ten_truyen || '';
+                    infoSo.textContent = c.so_chuong || '';
+                    infoTieu.textContent = c.tieu_de || '';
+                    infoNgay.textContent = c.ngay_dang || '';
+                    infoBox.style.display = '';
+                    statusSpan.textContent = '';
+                } else {
+                    alert(json.message || 'Không tìm thấy chương');
+                }
+            } catch(err){
+                console.error(err);
+                alert('Lỗi khi tải chương');
+            }
+        }
+
+        fetchBtn.addEventListener('click', function(){
+            const id = delIdInput.value.trim();
+            if(!id) return alert('Nhập ID');
+            fetchChuong(id);
+        });
+
+        deleteBtn.addEventListener('click', async function(){
+            const id = infoId.textContent || delIdInput.value.trim();
+            if(!id) return alert('Chưa có ID');
+            if(!confirm('Xác nhận xóa chương ID=' + id + '?')) return;
+            statusSpan.textContent = 'Đang xóa...';
+            try{
+                const fd = new FormData(); fd.append('id', id);
+                const res = await fetch('../../../backend/api/chuong/delete_chuong_api.php', { method: 'POST', body: fd });
+                const json = await res.json();
+                if(res.ok && json.success){
+                    statusSpan.style.color = 'green';
+                    statusSpan.textContent = json.message || 'Đã xóa';
+                    infoBox.style.display = 'none';
+                } else {
+                    statusSpan.style.color = 'red';
+                    statusSpan.textContent = json.message || 'Xóa thất bại';
+                }
+            } catch(err){
+                console.error(err);
+                statusSpan.style.color = 'red';
+                statusSpan.textContent = 'Lỗi kết nối';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

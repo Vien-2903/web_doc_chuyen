@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xóa Truyện</title>
+    <link rel="stylesheet" href="../public/css/admin.css">
+    <link rel="stylesheet" href="../public/css/truyen.css">
+    <style>
+        .delete-box{max-width:820px;margin:20px auto;padding:16px;border:1px solid #eee;border-radius:6px;background:#fff}
+        .info-row{margin:8px 0}
+    </style>
+</head>
+<body>
+    <a href="index.php?page=admin&controller=truyen&action=index" class="btn-home">← Quay lại</a>
+    <h1 class="form-title">Xóa Truyện</h1>
+
+    <div class="delete-box">
+        <div class="info-row">
+            <label for="del-id"><strong>Nhập ID truyện:</strong></label>
+            <input id="del-id" type="number" style="width:140px;margin-left:8px">
+            <button id="btn-fetch" type="button" style="margin-left:8px">Tải</button>
+        </div>
+
+        <div id="truyen-info" style="border-top:1px solid #f0f0f0;padding-top:12px;display:none">
+            <p><strong>ID:</strong> <span id="info-id"></span></p>
+            <p><strong>Tên:</strong> <span id="info-ten"></span></p>
+            <p><strong>Tác giả:</strong> <span id="info-tacgia"></span></p>
+            <p><strong>Trạng thái:</strong> <span id="info-trangthai"></span></p>
+            <p><img id="info-cover" src="" style="width:120px;display:none" alt="cover"></p>
+            <div style="margin-top:12px">
+                <button id="btn-delete" style="background:#c0392b;color:#fff;padding:8px 12px;border:none;border-radius:4px">Xóa truyện</button>
+                <span id="del-status" style="margin-left:12px"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        const fetchBtn = document.getElementById('btn-fetch');
+        const delIdInput = document.getElementById('del-id');
+        const infoBox = document.getElementById('truyen-info');
+        const infoId = document.getElementById('info-id');
+        const infoTen = document.getElementById('info-ten');
+        const infoTacGia = document.getElementById('info-tacgia');
+        const infoTrangThai = document.getElementById('info-trangthai');
+        const infoCover = document.getElementById('info-cover');
+        const deleteBtn = document.getElementById('btn-delete');
+        const statusSpan = document.getElementById('del-status');
+
+        async function fetchTruyen(id){
+            try{
+                const res = await fetch(`../../../backend/api/truyen/get_truyen_api.php?id=${id}`);
+                const json = await res.json();
+                if(json && json.truyen){
+                    const t = json.truyen;
+                    infoId.textContent = t.id || id;
+                    infoTen.textContent = t.ten_truyen || '';
+                    infoTacGia.textContent = t.ten_tacgia || t.but_danh || '';
+                    infoTrangThai.textContent = t.trang_thai || '';
+                    if(t.anh_bia){
+                        // Build URL relative to project root to match resolve_cover_image_url behavior
+                        if (/^https?:\/\//i.test(t.anh_bia)) {
+                            infoCover.src = t.anh_bia;
+                        } else {
+                            const raw = String(t.anh_bia).replace(/^\/+/, '');
+                            infoCover.src = '/web_doc_truyen/' + raw;
+                        }
+                        infoCover.style.display = 'inline-block';
+                    } else {
+                        infoCover.style.display = 'none';
+                    }
+                    infoBox.style.display = '';
+                    statusSpan.textContent = '';
+                } else {
+                    alert(json.message || 'Không tìm thấy truyện');
+                }
+            } catch(err){
+                console.error(err);
+                alert('Lỗi khi tải truyện');
+            }
+        }
+
+        fetchBtn.addEventListener('click', function(){
+            const id = delIdInput.value.trim();
+            if(!id) return alert('Nhập ID');
+            fetchTruyen(id);
+        });
+
+        deleteBtn.addEventListener('click', async function(){
+            const id = infoId.textContent || delIdInput.value.trim();
+            if(!id) return alert('Chưa có ID');
+            if(!confirm('Xác nhận xóa truyện ID=' + id + '?')) return;
+            statusSpan.textContent = 'Đang xóa...';
+            try{
+                const fd = new FormData(); fd.append('id', id);
+                const res = await fetch('../../../backend/api/truyen/delete_truyen_api.php', { method: 'POST', body: fd });
+                const json = await res.json();
+                if(res.ok && json.success){
+                    statusSpan.style.color = 'green';
+                    statusSpan.textContent = json.message || 'Đã xóa';
+                } else {
+                    statusSpan.style.color = 'red';
+                    statusSpan.textContent = json.message || 'Xóa thất bại';
+                }
+            } catch(err){
+                console.error(err);
+                statusSpan.style.color = 'red';
+                statusSpan.textContent = 'Lỗi kết nối';
+            }
+        });
+    });
+    </script>
+</body>
+</html>

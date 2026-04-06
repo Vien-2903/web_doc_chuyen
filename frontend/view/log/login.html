@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập - Web Đọc Truyện</title>
+    <link rel="stylesheet" href="../../public/css/log.css">
+    <link rel="stylesheet" href="../../public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-wrapper">
+
+            <h1 class="form-title">Đăng nhập</h1>
+                <table>
+                    <tr>
+                        <td>
+                            <label for="ten_dang_nhap">
+                                Tên đăng nhập <span class="required-mark">*</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="text" 
+                                   id="ten_dang_nhap" 
+                                   name="ten_dang_nhap" 
+                                   required
+                                   placeholder="Nhập tên đăng nhập">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            <label for="mat_khau">
+                                Mật khẩu <span class="required-mark">*</span>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="password"
+                                   id="mat_khau"
+                                   name="mat_khau"
+                                   required
+                                   placeholder="Nhập mật khẩu">
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="form-actions">
+                    <button type="submit" id = "signin">Đăng nhập</button>
+                </div>
+                
+                <p class="form-footer-link ">
+                    Chưa có tài khoản? 
+                    <a href="/web_doc_truyen/frontend/view/log/register.html">
+                        Đăng ký ngay
+                    </a>
+                </p>
+        </div>
+    </div>
+    <script>
+        const username = document.getElementById('ten_dang_nhap');
+        const password = document.getElementById('mat_khau');
+        const btnsignin = document.getElementById('signin');
+        btnsignin.addEventListener('click', function(event) {
+            event.preventDefault();
+
+            const payload = {
+                ten_dang_nhap: username.value,
+                mat_khau: password.value
+            };
+
+            fetch('/web_doc_truyen/backend/api/log/login_api.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                // Chuyển payload thành chuỗi JSON để gửi đi
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('isLoggedIn', 'true');
+                    window.location.href = '/web_doc_truyen/frontend/public/index.html';
+                } else {
+                    alert(data.message || 'Đăng nhập thất bại');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Đã xảy ra lỗi. Vui lòng thử lại sau.');  
+            });
+        }); 
+    </script>
+</body>
+</html>

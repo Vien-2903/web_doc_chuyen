@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Đọc Truyện</title>
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloai_user.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/home.css?v=20260403-1">
+    <link rel="stylesheet" href="../public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <section class="stories">
+        <div class="container">
+            <h2>Danh Sách Truyện</h2>
+            <div class="story-grid" id="story-grid">
+                <div class="story-status">Đang tải danh sách truyện...</div>
+            </div>
+            </div>
+    </section>
+
+    <script>
+        const headerContainer = document.getElementById('header-container');
+        const storyGrid = document.getElementById('story-grid');
+        
+        async function loadHeader() {
+            try {
+                const response = await fetch('/web_doc_truyen/frontend/view/layouts/user/header.html', {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Không tải được header.html');
+                }
+
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const header = doc.querySelector('header');
+                const scripts = doc.querySelectorAll('script');
+
+                if (!header) {
+                    throw new Error('Không tìm thấy thẻ header trong header.html');
+                }
+
+                headerContainer.innerHTML = header.outerHTML;
+
+                scripts.forEach((script) => {
+                    const runtimeScript = document.createElement('script');
+
+                    if (script.src) {
+                        runtimeScript.src = script.src;
+                    } else {
+                        runtimeScript.textContent = script.textContent;
+                    }
+
+                    document.body.appendChild(runtimeScript);
+                });
+            } catch (error) {
+                console.error('Lỗi tải header:', error);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatViewCount(value) {
+            return Number(value || 0).toLocaleString('vi-VN');
+        }
+
+        function resolveCoverUrl(anhBia) {
+            if (!anhBia) {
+                return 'https://via.placeholder.com/180x240/2c3e50/ffffff?text=No+Image';
+            }
+
+            let normalized = String(anhBia).trim().replace(/\\/g, '/');
+
+            if (normalized.startsWith('http://') || normalized.startsWith('https://') || normalized.startsWith('/')) {
+                if (!normalized.startsWith('/web_doc_truyen/')) {
+                    return normalized;
+                }
+                normalized = normalized.replace(/^\/web_doc_truyen\//, '');
+            }
+
+            if (normalized.startsWith('web_doc_truyen/')) {
+                normalized = normalized.replace(/^web_doc_truyen\//, '');
+            }
+
+            const legacyPrefixes = [
+                'uploads/anhbia/',
+                'frontend/public/uploads/anhbia/',
+                'frontend/images/anhbia/',
+                'images/anhbia/',
+                'backend/uploads/anhbia/'
+            ];
+
+            for (const prefix of legacyPrefixes) {
+                if (normalized.startsWith(prefix)) {
+                    const parts = normalized.split('/').filter(Boolean);
+                    const fileName = parts[parts.length - 1] || '';
+                    if (fileName) {
+                        return '/web_doc_truyen/backend/uploads/anhbia/' + fileName;
+                    }
+                }
+            }
+
+            if (normalized.startsWith('backend/') || normalized.startsWith('frontend/')) {
+                return '/web_doc_truyen/' + normalized;
+            }
+
+            return '/web_doc_truyen/' + normalized;
+        }
+
+        function renderStories(stories) {
+            if (!Array.isArray(stories) || stories.length === 0) {
+                storyGrid.innerHTML = '<div class="story-status"><h3>Chưa có truyện nào</h3><p>Vui lòng quay lại sau</p></div>';
+                return;
+            }
+
+            storyGrid.innerHTML = stories.map((story) => {
+                const title = escapeHtml(story.ten_truyen || 'Không có tiêu đề');
+                const author = escapeHtml(story.tac_gia || 'Chưa rõ');
+                const cover = resolveCoverUrl(story.anh_bia);
+                const legacyCover = '';
+
+                return `
+                    <article class="story-card">
+                        <a href="/web_doc_truyen/frontend/public/index.php?page=chitiet&id=${story.id}">
+                            <img src="${cover}" alt="${title}" data-legacy-src="${escapeHtml(legacyCover)}" onerror="if(this.dataset.legacySrc && this.src !== this.dataset.legacySrc){this.src=this.dataset.legacySrc;this.dataset.legacySrc='';return;}this.src='https://via.placeholder.com/180x240/2c3e50/ffffff?text=No+Image'">
+                            <h3>${title}</h3>
+                            <p>Tác giả: ${author}</p>
+                            <div class="story-meta">
+                                <span>
+                                    <i class="fa-solid fa-eye"></i>
+                                    ${formatViewCount(story.luot_xem)}</span>
+                            </div>
+                        </a>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        async function loadStories() {
+            try {
+                const response = await fetch('/web_doc_truyen/backend/api/truyen/truyen_api.php');
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Không thể tải dữ liệu truyện');
+                }
+
+                renderStories(data.stories || []);
+            } catch (error) {
+                console.error('Lỗi tải danh sách truyện:', error);
+                storyGrid.innerHTML = '<div class="story-status"><h3>⚠ Không tải được dữ liệu</h3><p>Vui lòng thử lại sau.</p></div>';
+            }
+        }
+
+        loadHeader();
+        loadStories();
+    </script>
+</body>
+</html>
