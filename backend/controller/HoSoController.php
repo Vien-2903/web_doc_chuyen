@@ -275,17 +275,8 @@ class HoSoController {
             'so_dien_thoai' => $hoSo['so_dien_thoai'] ?? '',
             'gioi_tinh' => $hoSo['gioi_tinh'] ?? '',
             'ngay_sinh' => $hoSo['ngay_sinh'] ?? '',
-            'dia_chi' => $hoSo['dia_chi'] ?? '',
-            'ngay_tao_ho_so' => $hoSo['ngay_tao'] ?? null,
-            'ngay_cap_nhat_ho_so' => $hoSo['ngay_cap_nhat'] ?? null
+            'dia_chi' => $hoSo['dia_chi'] ?? ''
         ];
-
-        $profileCompleted =
-            $profileData['ho_ten'] !== '' &&
-            $profileData['so_dien_thoai'] !== '' &&
-            $profileData['gioi_tinh'] !== '' &&
-            $profileData['ngay_sinh'] !== '' &&
-            $profileData['dia_chi'] !== '';
 
         return [
             'status' => 200,
@@ -297,7 +288,6 @@ class HoSoController {
                     'ten_dang_nhap' => $nguoiDung['ten_dang_nhap'] ?? '',
                     'email' => $nguoiDung['email'] ?? '',
                     'vai_tro' => $nguoiDung['vai_tro'] ?? 'user',
-                    'profile_completed' => $profileCompleted,
                     'profile' => $profileData
                 ]
             ]
@@ -348,6 +338,34 @@ class HoSoController {
         $dia_chi = array_key_exists('dia_chi', $inputData)
             ? trim((string) $inputData['dia_chi'])
             : ($hoSoHienTai['dia_chi'] ?? '');
+
+        $requiredErrors = [];
+        if ($ho_ten === '') {
+            $requiredErrors[] = 'Họ và tên không được để trống';
+        }
+        if ($so_dien_thoai === '') {
+            $requiredErrors[] = 'Số điện thoại không được để trống';
+        }
+        if ($gioi_tinh === '') {
+            $requiredErrors[] = 'Giới tính không được để trống';
+        }
+        if ($ngay_sinh === '') {
+            $requiredErrors[] = 'Ngày sinh không được để trống';
+        }
+        if ($dia_chi === '') {
+            $requiredErrors[] = 'Địa chỉ không được để trống';
+        }
+
+        if (!empty($requiredErrors)) {
+            return [
+                'status' => 422,
+                'body' => [
+                    'success' => false,
+                    'message' => 'Vui lòng nhập đầy đủ thông tin bắt buộc',
+                    'errors' => $requiredErrors
+                ]
+            ];
+        }
 
         if ($so_dien_thoai !== '' && !preg_match('/^[0-9]{10,11}$/', $so_dien_thoai)) {
             return [
