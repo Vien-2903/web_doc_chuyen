@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>Xem bình luận</title>
 
-    <link rel="stylesheet" href="../public/css/admin.css">
-    <link rel="stylesheet" href="../public/css/binhluan.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/admin.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/binhluan.css">
 </head>
 <body>
 

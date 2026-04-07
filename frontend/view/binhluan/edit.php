@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sửa bình luận</title>
 
-    <link rel="stylesheet" href="../public/css/admin.css">
-    <link rel="stylesheet" href="../public/css/binhluan.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/admin.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/binhluan.css">
 </head>
 <body>
 
