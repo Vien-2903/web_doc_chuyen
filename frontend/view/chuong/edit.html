@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sửa Chương</title>
-    <link rel="stylesheet" href="/web_doc_chuyen/frontend/public/css/chuong.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/chuong.css">
 </head>
 <body>
     <a href="index.php?page=admin&controller=chuong&action=index" class="btn-home">← Quay lại</a>
@@ -55,7 +55,7 @@
             
             <div class="form-actions">
                 <button type="submit"> Cập nhật</button>
-                <a href="index.php?page=admin&controller=chuong&action=index" class="btn-back"> Hủy</a>
+                <a href="" class="btn-back"> Hủy</a>
             </div>
         </form>
     </div>
@@ -144,7 +144,7 @@
                 if(res.ok && json.success){
                     msgBox.style.color = 'green';
                     msgBox.textContent = json.message || 'Cập nhật thành công';
-                    setTimeout(()=>{ window.location.href = 'index.php?page=admin&controller=chuong&action=index&success=edit'; }, 800);
+                    setTimeout(()=>{ window.location.href = ''; }, 800);
                 } else {
                     msgBox.style.color = 'red';
                     msgBox.textContent = json.message || 'Lỗi khi cập nhật';
