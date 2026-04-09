@@ -67,7 +67,7 @@
             
             <div class="form-actions">
                 <button type="submit">Thêm truyện</button>
-                <a href="index.php?page=admin&controller=truyen&action=index" class="btn-back">Hủy</a>
+                <a href="" class="btn-back">Hủy</a>
             </div>
         </form>
     </div>
@@ -124,7 +124,7 @@
                     msgBox.textContent = data.message || 'Thêm truyện thành công';
                     // redirect to admin list after short delay
                     setTimeout(()=>{
-                        window.location.href = 'index.php?page=admin&controller=truyen&action=index&success=add';
+                        window.location.href = '';
                     }, 900);
                 } else {
                     msgBox.style.color = 'red';
