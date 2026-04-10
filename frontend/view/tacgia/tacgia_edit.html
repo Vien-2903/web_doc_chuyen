@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh Sửa Tác Giả - Web Đọc Truyện</title>
+    <link rel="stylesheet" href="../../public/css/tacgia.css">
+    <link rel="stylesheet" href="../../public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-wrapper">
+            <h1 class="form-title">Chỉnh sửa tác giả</h1>
+            <p id="form-message"></p>
+
+            <table>
+                <tr>
+                    <td>
+                        <label for="tacgia_id_input">ID tác giả</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="id-load-row">
+                            <input type="number"
+                                   id="tacgia_id_input"
+                                   min="1"
+                                   placeholder="Nhập ID tác giả cần sửa">
+                            <button type="button" id="loadTacGiaById">Tải</button>
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label for="ten_tacgia">
+                            Tên tác giả <span class="required-mark">*</span>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text"
+                               id="ten_tacgia"
+                               name="ten_tacgia"
+                               required
+                               placeholder="Nhập tên tác giả">
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label for="but_danh">Bút danh</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text"
+                               id="but_danh"
+                               name="but_danh"
+                               placeholder="Nhập bút danh (nếu có)">
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label for="gioi_thieu">Giới thiệu</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <textarea id="gioi_thieu"
+                                  name="gioi_thieu"
+                                  rows="5"
+                                  placeholder="Giới thiệu về tác giả..."></textarea>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="form-actions">
+                <button type="button" id="updateTacGia">Cập nhật tác giả</button>
+            </div>
+
+            <p class="form-footer-link">
+                <a href="/web_doc_truyen/frontend/public/index.html">Quay lại trang chủ</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const tenTacGia = document.getElementById('ten_tacgia');
+        const butDanh = document.getElementById('but_danh');
+        const gioiThieu = document.getElementById('gioi_thieu');
+        const tacGiaIdInput = document.getElementById('tacgia_id_input');
+        const btnLoadTacGia = document.getElementById('loadTacGiaById');
+        const btnUpdateTacGia = document.getElementById('updateTacGia');
+        const formMessage = document.getElementById('form-message');
+        const query = new URLSearchParams(window.location.search);
+        let currentTacGiaId = parseInt(query.get('id') || '0', 10);
+
+        const resetMessageState = function () {
+            formMessage.classList.remove('is-loading', 'is-success', 'is-error');
+        };
+
+        const setMessage = function (type, text) {
+            resetMessageState();
+            if (type) {
+                formMessage.classList.add(type);
+            }
+            formMessage.textContent = text;
+        };
+
+        const loadTacGia = function (id) {
+            if (!id) {
+                btnUpdateTacGia.disabled = true;
+                return;
+            }
+
+            fetch('/web_doc_truyen/backend/api/tacgia/tacgia_list_api.php', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success || !Array.isArray(data.data)) {
+                    setMessage('is-error', data.message || 'Không tải được dữ liệu tác giả.');
+                    return;
+                }
+
+                const found = data.data.find(function (item) {
+                    return Number(item.id) === id;
+                });
+
+                if (!found) {
+                    setMessage('is-error', 'Không tìm thấy tác giả cần chỉnh sửa.');
+                    btnUpdateTacGia.disabled = true;
+                    return;
+                }
+
+                tenTacGia.value = found.ten_tacgia || '';
+                butDanh.value = found.but_danh || '';
+                gioiThieu.value = found.gioi_thieu || '';
+                currentTacGiaId = id;
+                btnUpdateTacGia.disabled = false;
+                setMessage('', '');
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                setMessage('is-error', 'Đã xảy ra lỗi khi tải dữ liệu.');
+            });
+        };
+
+        btnLoadTacGia.addEventListener('click', function () {
+            const id = parseInt(tacGiaIdInput.value || '0', 10);
+            if (!id) {
+                setMessage('is-error', 'Vui lòng nhập ID hợp lệ để tải.');
+                tacGiaIdInput.focus();
+                return;
+            }
+            loadTacGia(id);
+        });
+
+        btnUpdateTacGia.addEventListener('click', function () {
+            const tenTacGiaValue = tenTacGia.value.trim();
+            const butDanhValue = butDanh.value.trim();
+            const gioiThieuValue = gioiThieu.value.trim();
+
+            if (!currentTacGiaId) {
+                setMessage('is-error', 'Vui lòng tải tác giả theo ID trước khi cập nhật.');
+                return;
+            }
+
+            if (!tenTacGiaValue) {
+                alert('Tên tác giả không được để trống');
+                tenTacGia.focus();
+                return;
+            }
+
+            const payload = {
+                id: currentTacGiaId,
+                ten_tacgia: tenTacGiaValue,
+                but_danh: butDanhValue,
+                gioi_thieu: gioiThieuValue
+            };
+
+            setMessage('is-loading', 'Đang xử lý...');
+            btnUpdateTacGia.disabled = true;
+
+            fetch('/web_doc_truyen/backend/api/tacgia/update_api.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    setMessage('is-success', data.message || 'Cập nhật tác giả thành công');
+                } else {
+                    setMessage('is-error', data.message || 'Cập nhật tác giả thất bại');
+                }
+            })
+            .catch(function (error) {
+                console.error('Error:', error);
+                setMessage('is-error', 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
+            })
+            .finally(function () {
+                btnUpdateTacGia.disabled = false;
+            });
+        });
+
+        if (currentTacGiaId) {
+            tacGiaIdInput.value = String(currentTacGiaId);
+            loadTacGia(currentTacGiaId);
+        } else {
+            btnUpdateTacGia.disabled = true;
+            setMessage('', '');
+        }
+    </script>
+</body>
+</html>

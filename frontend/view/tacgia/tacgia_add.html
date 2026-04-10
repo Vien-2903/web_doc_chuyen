@@ -1,51 +1,142 @@
-<a href="#" class="btn-home">← Quay lại danh sách</a>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Tác Giả - Web Đọc Truyện</title>
+    <link rel="stylesheet" href="../../public/css/tacgia.css">
+    <link rel="stylesheet" href="../../public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
 
-<h1 class="form-title">Thêm tác giả mới</h1>
-<form method="POST" action="#" class="user-form">
-    <table>
-        <tr>
-            <td><label for="ten_tacgia">Tên tác giả: <span style="color: red;">*</span></label></td>
-        </tr>
-        <tr>
-            <td>
-                <input type="text"
-                        id="ten_tacgia"
-                        name="ten_tacgia"
-                    value=""
-                        required
-                        placeholder="Nhập tên tác giả">
-            </td>
-        </tr>
+    <div class="login-container">
+        <div class="login-wrapper">
 
-        <tr>
-            <td><label for="but_danh">Bút danh:</label></td>
-        </tr>
-        <tr>
-            <td>
-                <input type="text" 
-                        id="but_danh" 
-                        name="but_danh" 
-                    value=""
-                        placeholder="Nhập bút danh (nếu có)">
-            </td>
-        </tr>
+            <h1 class="form-title">Thêm tác giả mới</h1>
+            <p id="form-message"></p>
 
-        <tr>
-            <td><label for="gioi_thieu">Giới thiệu:</label></td>
-        </tr>
-        <tr>
-            <td>
-                <textarea id="gioi_thieu" 
-                          name="gioi_thieu" 
-                          rows="5" 
-                          placeholder="Giới thiệu về tác giả..."
-                          style="width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; resize: vertical;"></textarea>
-            </td>
-        </tr>
-    </table>
+            <table>
+                <tr>
+                    <td>
+                        <label for="ten_tacgia">
+                            Tên tác giả <span class="required-mark">*</span>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text"
+                               id="ten_tacgia"
+                               name="ten_tacgia"
+                               required
+                               placeholder="Nhập tên tác giả">
+                    </td>
+                </tr>
 
-    <div class="form-actions">
-        <button type="submit">Thêm mới</button>
-        <a href="#" class="btn-back">Hủy</a>
+                <tr>
+                    <td>
+                        <label for="but_danh">Bút danh</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="text"
+                               id="but_danh"
+                               name="but_danh"
+                               placeholder="Nhập bút danh (nếu có)">
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <label for="gioi_thieu">Giới thiệu</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <textarea id="gioi_thieu"
+                                  name="gioi_thieu"
+                                  rows="5"
+                                  placeholder="Giới thiệu về tác giả..."></textarea>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="form-actions">
+                <button type="button" id="addTacGia">Thêm tác giả</button>
+            </div>
+
+            <p class="form-footer-link">
+                <a href="/web_doc_truyen/frontend/public/index.html">Quay lại trang chủ</a>
+            </p>
+        </div>
     </div>
-</form>
+
+    <script>
+        const tenTacGia = document.getElementById('ten_tacgia');
+        const butDanh = document.getElementById('but_danh');
+        const gioiThieu = document.getElementById('gioi_thieu');
+        const btnAddTacGia = document.getElementById('addTacGia');
+        const formMessage = document.getElementById('form-message');
+        const resetMessageState = function () {
+            formMessage.classList.remove('is-loading', 'is-success', 'is-error');
+        };
+
+        btnAddTacGia.addEventListener('click', function () {
+            const tenTacGiaValue = tenTacGia.value.trim();
+            const butDanhValue = butDanh.value.trim();
+            const gioiThieuValue = gioiThieu.value.trim();
+
+            if (!tenTacGiaValue) {
+                alert('Tên tác giả không được để trống');
+                tenTacGia.focus();
+                return;
+            }
+
+            const payload = {
+                ten_tacgia: tenTacGiaValue,
+                but_danh: butDanhValue,
+                gioi_thieu: gioiThieuValue
+            };
+
+            resetMessageState();
+            formMessage.classList.add('is-loading');
+            formMessage.textContent = 'Đang xử lý...';
+            btnAddTacGia.disabled = true;
+
+            fetch('/web_doc_truyen/backend/api/tacgia/add_api.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resetMessageState();
+                    formMessage.classList.add('is-success');
+                    formMessage.textContent = data.message || 'Thêm tác giả thành công';
+                    tenTacGia.value = '';
+                    butDanh.value = '';
+                    gioiThieu.value = '';
+                } else {
+                    resetMessageState();
+                    formMessage.classList.add('is-error');
+                    formMessage.textContent = data.message || 'Thêm tác giả thất bại';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resetMessageState();
+                formMessage.classList.add('is-error');
+                formMessage.textContent = 'Đã xảy ra lỗi. Vui lòng thử lại sau.';
+            })
+            .finally(() => {
+                btnAddTacGia.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>
