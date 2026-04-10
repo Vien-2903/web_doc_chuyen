@@ -193,7 +193,7 @@ class HoSoController {
         }
         if ($so_dien_thoai === '') {
             $requiredErrors[] = 'Số điện thoại không được để trống';
-        }
+        }   
         if ($gioi_tinh === '') {
             $requiredErrors[] = 'Giới tính không được để trống';
         }
