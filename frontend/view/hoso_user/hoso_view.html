@@ -212,6 +212,7 @@
                     roleBadge.classList.add(role);
                     roleBadge.textContent = role === 'admin' ? 'Quản trị viên' : 'Người dùng';
 
+                    // Điền text "Chưa cập nhật" nếu các trường thông tin còn trống
                     setValue('email', user.email || '');
                     setValue('ten-dang-nhap', tenDangNhap);
                     setValue('ho-ten', hoTen);

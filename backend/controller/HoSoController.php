@@ -47,79 +47,7 @@ class HoSoController {
             }
         }
     }
-    // Xử lý cập nhật hồ sơ
-    public function update() {
-        if($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $id_nguoidung = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : (int)($_POST['id_nguoidung'] ?? 0);
-            $ho_ten = trim($_POST['ho_ten']);
-            $ngay_sinh = $_POST['ngay_sinh'];
-            $gioi_tinh = $_POST['gioi_tinh'];
-            $so_dien_thoai = trim($_POST['so_dien_thoai']);
-            $dia_chi = trim($_POST['dia_chi']);
 
-            if($id_nguoidung <= 0) {
-                $_SESSION['error'] = "Phiên đăng nhập không hợp lệ";
-                header("Location: /web_doc_truyen/frontend/public/index.php?page=login");
-                exit();
-            }
-            
-            // Kiểm tra số điện thoại trùng (loại trừ chính nó)
-            if($so_dien_thoai !== '' && $this->hoSoModel->checkSoDienThoaiExists($so_dien_thoai, $id_nguoidung)) {
-                $_SESSION['error'] = "Số điện thoại đã tồn tại!";
-                header("Location: /web_doc_truyen/frontend/public/index.php?page=profile");
-                exit();
-            }
-            
-            // Kiểm tra hồ sơ đã tồn tại chưa
-            if($this->hoSoModel->checkHoSoExists($id_nguoidung)) {
-                // Update
-                $this->hoSoModel->updateHoSo($id_nguoidung, $ho_ten, $ngay_sinh, $gioi_tinh, $so_dien_thoai, $dia_chi);
-            } else {
-                // Create
-                $this->hoSoModel->createHoSo($id_nguoidung, $ho_ten, $ngay_sinh, $gioi_tinh, $so_dien_thoai, $dia_chi);
-            }
-            
-            // Xử lý upload avatar mới
-            if(isset($_FILES['avatar']) && (int)$_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
-                if((int)$_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
-                    $_SESSION['error'] = 'Upload ảnh thất bại! Mã lỗi: ' . (int)$_FILES['avatar']['error'];
-                    header("Location: /web_doc_truyen/frontend/public/index.php?page=profile");
-                    exit();
-                }
-
-                // Lấy avatar cũ
-                $old_avatar = $this->hoSoModel->getAvatar($id_nguoidung);
-                
-                // Upload avatar mới
-                $avatar = $this->uploadAvatar($_FILES['avatar']);
-                
-                if($avatar !== false) {
-                    $updated = $this->hoSoModel->updateAvatar($id_nguoidung, $avatar);
-
-                    if(!$updated) {
-                        $this->deleteAvatarFile($avatar);
-                        $_SESSION['error'] = 'Upload ảnh thất bại! Không thể lưu thông tin ảnh.';
-                        header("Location: /web_doc_truyen/frontend/public/index.php?page=profile");
-                        exit();
-                    }
-
-                    // Xóa avatar cũ nếu có
-                    if($old_avatar) {
-                        $this->deleteAvatarFile($old_avatar);
-                    }
-                } else {
-                    $_SESSION['error'] = 'Upload ảnh thất bại! Kiểm tra định dạng (JPG, JPEG, PNG, GIF, WEBP) và kích thước (max 5MB)';
-                    header("Location: /web_doc_truyen/frontend/public/index.php?page=profile");
-                    exit();
-                }
-            }
-            
-            $_SESSION['success'] = "Cập nhật hồ sơ thành công!";
-            header("Location: /web_doc_truyen/frontend/public/index.php?page=profile");
-            exit();
-        }
-    }
-    
     // Upload avatar
     private function uploadAvatar($file) {
         $target_dir = $this->getAvatarUploadDir() . DIRECTORY_SEPARATOR;
@@ -161,86 +89,6 @@ class HoSoController {
         
         return false;
     }
-    public function view() {
-        // Kiểm tra đăng nhập
-        if (!isset($_SESSION['user'])) {
-            header('Location: /web_doc_truyen/frontend/public/index.php?page=login');
-            exit();
-        }
-        
-        // Lấy ID người dùng từ session
-        $id_nguoidung = $_SESSION['user']['id'];
-        
-        // Lấy thông tin người dùng
-        $nguoiDung = $this->nguoiDungModel->getNguoiDungById($id_nguoidung);
-        
-        // Lấy thông tin hồ sơ
-        $hoSo = $this->hoSoModel->getHoSoByUserId($id_nguoidung);
-        
-        // Nếu chưa có hồ sơ, tạo mảng rỗng với thông tin cơ bản từ người dùng
-        if(!$hoSo) {
-            $hoSo = [
-                'id_nguoidung' => $id_nguoidung,
-                'ten_dang_nhap' => $nguoiDung['ten_dang_nhap'],
-                'email' => $nguoiDung['email'],
-                'vai_tro' => $nguoiDung['vai_tro'],
-                'ho_ten' => '',
-                'avatar' => '',
-                'so_dien_thoai' => '',
-                'gioi_tinh' => '',
-                'ngay_sinh' => '',
-                'dia_chi' => ''
-            ];
-        } else {
-            // Gộp thông tin từ bảng nguoidung vào
-            $hoSo['ten_dang_nhap'] = $nguoiDung['ten_dang_nhap'];
-            $hoSo['vai_tro'] = $nguoiDung['vai_tro'];
-            $hoSo['email'] = $nguoiDung['email'];
-        }
-        
-        // Hiển thị trang xem hồ sơ
-        require_once(__DIR__ . '/../view/hoso_user/hoso_view.php');
-    }
-    public function edit() {
-        // Kiểm tra đăng nhập
-        if (!isset($_SESSION['user'])) {
-            header('Location: /web_doc_truyen/frontend/public/index.php?page=login');
-            exit();
-        }
-        
-        // Lấy ID người dùng từ session
-        $id_nguoidung = $_SESSION['user']['id'];
-        
-        // Lấy thông tin người dùng
-        $nguoiDung = $this->nguoiDungModel->getNguoiDungById($id_nguoidung);
-        
-        // Lấy thông tin hồ sơ
-        $hoSo = $this->hoSoModel->getHoSoByUserId($id_nguoidung);
-        
-        // Nếu chưa có hồ sơ, tạo mảng rỗng với thông tin cơ bản từ người dùng
-        if(!$hoSo) {
-            $hoSo = [
-                'id_nguoidung' => $id_nguoidung,
-                'ten_dang_nhap' => $nguoiDung['ten_dang_nhap'],
-                'email' => $nguoiDung['email'],
-                'vai_tro' => $nguoiDung['vai_tro'],
-                'ho_ten' => '',
-                'avatar' => '',
-                'so_dien_thoai' => '',
-                'gioi_tinh' => '',
-                'ngay_sinh' => '',
-                'dia_chi' => ''
-            ];
-        } else {
-            // Gộp thông tin từ bảng nguoidung vào
-            $hoSo['ten_dang_nhap'] = $nguoiDung['ten_dang_nhap'];
-            $hoSo['vai_tro'] = $nguoiDung['vai_tro'];
-            $hoSo['email'] = $nguoiDung['email'];
-        }
-        
-        // Hiển thị form chỉnh sửa
-        require_once(__DIR__ . '/../view/hoso_user/hoso_detail.php');
-    }
 
     // API: Lấy toàn bộ thông tin người dùng đang đăng nhập
     public function getCurrentUserProfileData($sessionUser) {
@@ -275,17 +123,8 @@ class HoSoController {
             'so_dien_thoai' => $hoSo['so_dien_thoai'] ?? '',
             'gioi_tinh' => $hoSo['gioi_tinh'] ?? '',
             'ngay_sinh' => $hoSo['ngay_sinh'] ?? '',
-            'dia_chi' => $hoSo['dia_chi'] ?? '',
-            'ngay_tao_ho_so' => $hoSo['ngay_tao'] ?? null,
-            'ngay_cap_nhat_ho_so' => $hoSo['ngay_cap_nhat'] ?? null
+            'dia_chi' => $hoSo['dia_chi'] ?? ''
         ];
-
-        $profileCompleted =
-            $profileData['ho_ten'] !== '' &&
-            $profileData['so_dien_thoai'] !== '' &&
-            $profileData['gioi_tinh'] !== '' &&
-            $profileData['ngay_sinh'] !== '' &&
-            $profileData['dia_chi'] !== '';
 
         return [
             'status' => 200,
@@ -297,7 +136,6 @@ class HoSoController {
                     'ten_dang_nhap' => $nguoiDung['ten_dang_nhap'] ?? '',
                     'email' => $nguoiDung['email'] ?? '',
                     'vai_tro' => $nguoiDung['vai_tro'] ?? 'user',
-                    'profile_completed' => $profileCompleted,
                     'profile' => $profileData
                 ]
             ]
@@ -348,6 +186,34 @@ class HoSoController {
         $dia_chi = array_key_exists('dia_chi', $inputData)
             ? trim((string) $inputData['dia_chi'])
             : ($hoSoHienTai['dia_chi'] ?? '');
+
+        $requiredErrors = [];
+        if ($ho_ten === '') {
+            $requiredErrors[] = 'Họ và tên không được để trống';
+        }
+        if ($so_dien_thoai === '') {
+            $requiredErrors[] = 'Số điện thoại không được để trống';
+        }   
+        if ($gioi_tinh === '') {
+            $requiredErrors[] = 'Giới tính không được để trống';
+        }
+        if ($ngay_sinh === '') {
+            $requiredErrors[] = 'Ngày sinh không được để trống';
+        }
+        if ($dia_chi === '') {
+            $requiredErrors[] = 'Địa chỉ không được để trống';
+        }
+
+        if (!empty($requiredErrors)) {
+            return [
+                'status' => 422,
+                'body' => [
+                    'success' => false,
+                    'message' => 'Vui lòng nhập đầy đủ thông tin bắt buộc',
+                    'errors' => $requiredErrors
+                ]
+            ];
+        }
 
         if ($so_dien_thoai !== '' && !preg_match('/^[0-9]{10,11}$/', $so_dien_thoai)) {
             return [

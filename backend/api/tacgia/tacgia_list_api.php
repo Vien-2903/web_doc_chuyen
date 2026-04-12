@@ -29,7 +29,8 @@ if ($result) {
         $authors[] = [
             'id' => isset($row['id']) ? (int)$row['id'] : null,
             'ten_tacgia' => $row['ten_tacgia'] ?? null,
-            'but_danh' => $row['but_danh'] ?? null
+            'but_danh' => $row['but_danh'] ?? null,
+            'gioi_thieu' => $row['gioi_thieu'] ?? null
         ];
     }
 }

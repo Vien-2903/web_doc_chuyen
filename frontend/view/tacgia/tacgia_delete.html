@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Xóa Tác Giả - Web Đọc Truyện</title>
+	<link rel="stylesheet" href="../../public/css/tacgia.css">
+	<link rel="stylesheet" href="../../public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+	<div class="login-container">
+		<div class="login-wrapper">
+			<h1 class="form-title">Xóa tác giả</h1>
+			<p id="form-message"></p>
+            
+			<table>
+				<tr>
+					<td>
+						<label for="tacgia_id_input">ID tác giả</label>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<div class="id-load-row">
+							<input type="number"
+								   id="tacgia_id_input"
+								   min="1"
+								   placeholder="Nhập ID tác giả cần xóa">
+							<button type="button" id="loadTacGiaById">Tải</button>
+						</div>
+					</td>
+				</tr>
+
+				<tr>
+					<td><label for="ten_tacgia">Tên tác giả</label></td>
+				</tr>
+				<tr>
+					<td>
+						<input type="text" id="ten_tacgia" readonly placeholder="Thông tin sẽ hiển thị sau khi tải">
+					</td>
+				</tr>
+
+				<tr>
+					<td><label for="but_danh">Bút danh</label></td>
+				</tr>
+				<tr>
+					<td>
+						<input type="text" id="but_danh" readonly>
+					</td>
+				</tr>
+
+				<tr>
+					<td><label for="gioi_thieu">Giới thiệu</label></td>
+				</tr>
+				<tr>
+					<td>
+						<textarea id="gioi_thieu" rows="5" readonly></textarea>
+					</td>
+				</tr>
+			</table>
+
+			<div class="form-actions">
+				<button type="button" id="deleteTacGia">Xóa tác giả</button>
+			</div>
+
+			<p class="form-footer-link">
+				<a href="/web_doc_truyen/frontend/public/index.html">Quay lại trang chủ</a>
+			</p>
+		</div>
+	</div>
+
+	<script>
+		const tacGiaIdInput = document.getElementById('tacgia_id_input');
+		const tenTacGia = document.getElementById('ten_tacgia');
+		const butDanh = document.getElementById('but_danh');
+		const gioiThieu = document.getElementById('gioi_thieu');
+		const btnLoadTacGia = document.getElementById('loadTacGiaById');
+		const btnDeleteTacGia = document.getElementById('deleteTacGia');
+		const formMessage = document.getElementById('form-message');
+		const query = new URLSearchParams(window.location.search);
+		let currentTacGiaId = parseInt(query.get('id') || '0', 10);
+
+		const resetMessageState = function () {
+			formMessage.classList.remove('is-loading', 'is-success', 'is-error');
+		};
+
+		const setMessage = function (type, text) {
+			resetMessageState();
+			if (type) {
+				formMessage.classList.add(type);
+			}
+			formMessage.textContent = text;
+		};
+
+		const clearDisplay = function () {
+			tenTacGia.value = '';
+			butDanh.value = '';
+			gioiThieu.value = '';
+		};
+
+		const loadTacGia = function (id) {
+			if (!id) {
+				setMessage('is-error', 'Vui lòng nhập ID hợp lệ để tải.');
+				btnDeleteTacGia.disabled = true;
+				return;
+			}
+
+			fetch('/web_doc_truyen/backend/api/tacgia/tacgia_list_api.php', {
+				method: 'GET',
+				credentials: 'same-origin'
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (!data.success || !Array.isArray(data.data)) {
+					setMessage('is-error', data.message || 'Không tải được dữ liệu tác giả.');
+					btnDeleteTacGia.disabled = true;
+					clearDisplay();
+					return;
+				}
+
+				const found = data.data.find(function (item) {
+					return Number(item.id) === id;
+				});
+
+				if (!found) {
+					setMessage('is-error', 'Không tìm thấy tác giả với ID đã nhập.');
+					btnDeleteTacGia.disabled = true;
+					clearDisplay();
+					return;
+				}
+
+				currentTacGiaId = id;
+				tenTacGia.value = found.ten_tacgia || '';
+				butDanh.value = found.but_danh || '';
+				gioiThieu.value = found.gioi_thieu || '';
+				btnDeleteTacGia.disabled = false;
+			})
+			.catch(function (error) {
+				console.error('Error:', error);
+				setMessage('is-error', 'Đã xảy ra lỗi khi tải dữ liệu.');
+				btnDeleteTacGia.disabled = true;
+				clearDisplay();
+			});
+		};
+
+		btnLoadTacGia.addEventListener('click', function () {
+			const id = parseInt(tacGiaIdInput.value || '0', 10);
+			if (!id) {
+				setMessage('is-error', 'Vui lòng nhập ID hợp lệ để tải.');
+				tacGiaIdInput.focus();
+				return;
+			}
+			loadTacGia(id);
+		});
+
+		btnDeleteTacGia.addEventListener('click', function () {
+			if (!currentTacGiaId) {
+				setMessage('is-error', 'Vui lòng tải tác giả trước khi xóa.');
+				return;
+			}
+
+			const confirmed = window.confirm('Bạn có chắc chắn muốn xóa tác giả này?');
+			if (!confirmed) {
+				return;
+			}
+
+			setMessage('is-loading', 'Đang xử lý...');
+			btnDeleteTacGia.disabled = true;
+
+			fetch('/web_doc_truyen/backend/api/tacgia/delete_api.php', {
+				method: 'POST',
+				credentials: 'same-origin',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ id: currentTacGiaId })
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success) {
+					setMessage('is-success', data.message || 'Xóa tác giả thành công');
+					clearDisplay();
+					tacGiaIdInput.value = '';
+					currentTacGiaId = 0;
+				} else {
+					setMessage('is-error', data.message || 'Xóa tác giả thất bại');
+				}
+			})
+			.catch(function (error) {
+				console.error('Error:', error);
+				setMessage('is-error', 'Đã xảy ra lỗi. Vui lòng thử lại sau.');
+			})
+			.finally(function () {
+				if (currentTacGiaId === 0) {
+					btnDeleteTacGia.disabled = true;
+				} else {
+					btnDeleteTacGia.disabled = false;
+				}
+			});
+		});
+
+		if (currentTacGiaId) {
+			tacGiaIdInput.value = String(currentTacGiaId);
+			loadTacGia(currentTacGiaId);
+		} else {
+			btnDeleteTacGia.disabled = true;
+			setMessage('', '');
+		}
+	</script>
+</body>
+</html>
