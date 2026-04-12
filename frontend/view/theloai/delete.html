@@ -2,8 +2,9 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xóa Thể Loại</title>
-    <link rel="stylesheet" href="../public/css/admin.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloaiandtrang.css">
 </head>
 <body>
 
@@ -11,79 +12,119 @@
 
 <h1 class="form-title">Xóa Thể Loại</h1>
 
-<div class="delete-box">
-    <div class="info-row">
-        <label><strong>Nhập ID:</strong></label>
-        <input id="tl-id" type="number">
-        <button id="btn-load">Tải</button>
-    </div>
+<div id="api-message"></div>
 
-    <div id="tl-info" style="display:none;margin-top:15px">
-        <p><strong>ID:</strong> <span id="info-id"></span></p>
-        <p><strong>Tên thể loại:</strong> <span id="info-ten"></span></p>
+<div class="user-form">
+    <table>
+        <tr>
+            <td>Nhập ID: <span class="required">*</span></td>
+            <td style="display:flex;gap:8px;align-items:center">
+                <input type="number" id="tl-id" placeholder="VD: 1" style="flex:1">
+                <button type="button" id="btn-load" class="btn-load">Tải</button>
+            </td>
+        </tr>
+    </table>
 
-        <button id="btn-delete" style="background:red;color:#fff;padding:6px 10px">
-            Xóa
-        </button>
+    <div id="tl-info" style="display:none">
+        <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px">
+            <table>
+                <tr>
+                    <td>ID:</td>
+                    <td><span id="info-id" style="font-weight:600"></span></td>
+                </tr>
+                <tr>
+                    <td>Tên thể loại:</td>
+                    <td><span id="info-ten" style="font-weight:600"></span></td>
+                </tr>
+            </table>
+        </div>
 
-        <span id="msg" style="margin-left:10px"></span>
+        <div class="form-actions">
+            <button type="button" id="btn-delete" class="btn-danger">Xóa thể loại</button>
+        </div>
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function(){
+<style>
+.btn-danger {
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: inherit;
+    padding: 12px 28px;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-danger:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(20,20,20,0.18);
+}
+.btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+</style>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
     const btnLoad = document.getElementById('btn-load');
     const idInput = document.getElementById('tl-id');
     const infoBox = document.getElementById('tl-info');
-
     const infoId = document.getElementById('info-id');
     const infoTen = document.getElementById('info-ten');
-    const msg = document.getElementById('msg');
-
     const btnDelete = document.getElementById('btn-delete');
+    const msg = document.getElementById('api-message');
 
-    // LOAD
     btnLoad.addEventListener('click', async () => {
         const id = idInput.value.trim();
-        if(!id) return alert('Nhập ID');
-
-        const res = await fetch(`../../../backend/api/theloai/get_theloai_api.php?id=${id}`);
-        const data = await res.json();
-
-        if(data.success){
-            infoId.textContent = data.data.id;
-            infoTen.textContent = data.data.ten_theloai;
-            infoBox.style.display = 'block';
-        } else {
-            alert(data.message);
+        if (!id) return alert('Nhập ID');
+        try {
+            const res = await fetch(`../../../backend/api/theloai/get_theloai_api.php?id=${id}`);
+            const data = await res.json();
+            if (data.success) {
+                infoId.textContent = data.data.id;
+                infoTen.textContent = data.data.ten_theloai;
+                infoBox.style.display = 'block';
+                msg.textContent = '';
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            alert('Lỗi: ' + err.message);
         }
     });
 
-    // DELETE
     btnDelete.addEventListener('click', async () => {
         const id = infoId.textContent;
-        if(!confirm('Xóa thể loại ID=' + id + '?')) return;
-
-        const fd = new FormData();
-        fd.append('id', id);
-
-        const res = await fetch('../../../backend/api/theloai/delete_theloai_api.php', {
-            method: 'POST',
-            body: fd
-        });
-
-        const data = await res.json();
-
-        if(data.success){
-            msg.style.color = 'green';
-            msg.textContent = 'Đã xóa';
-        } else {
-            msg.style.color = 'red';
-            msg.textContent = data.message;
+        if (!confirm('Xác nhận xóa thể loại ID=' + id + '?')) return;
+        btnDelete.disabled = true;
+        try {
+            const fd = new FormData();
+            fd.append('id', id);
+            const res = await fetch('../../../backend/api/theloai/delete_theloai_api.php', {
+                method: 'POST', body: fd
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.style.color = 'var(--success)';
+                msg.textContent = data.message || 'Đã xóa thành công';
+                infoBox.style.display = 'none';
+            } else {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = data.message || 'Xóa thất bại';
+            }
+        } catch (err) {
+            msg.style.color = 'var(--danger)';
+            msg.textContent = 'Lỗi: ' + err.message;
+        } finally {
+            btnDelete.disabled = false;
         }
     });
-
 });
 </script>
 

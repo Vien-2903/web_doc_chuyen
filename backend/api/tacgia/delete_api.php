@@ -23,13 +23,11 @@ require_once __DIR__ . '/../../controller/TacGiaController.php';
 $input = json_decode(file_get_contents("php://input"), true) ?: [];
 
 $data = [
-	'ten_tacgia' => $_POST['ten_tacgia'] ?? ($input['ten_tacgia'] ?? ''),
-	'but_danh' => $_POST['but_danh'] ?? ($input['but_danh'] ?? ''),
-	'gioi_thieu' => $_POST['gioi_thieu'] ?? ($input['gioi_thieu'] ?? '')
+	'id' => $_POST['id'] ?? ($input['id'] ?? null)
 ];
 
-	$controller = new TacGiaController();
-	$response = $controller->addApi($data);
+$controller = new TacGiaController();
+$response = $controller->deleteApi($data);
 
 http_response_code($response['status']);
 echo json_encode($response['body'], JSON_UNESCAPED_UNICODE);

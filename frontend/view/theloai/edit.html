@@ -2,8 +2,9 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sửa Thể Loại</title>
-    <link rel="stylesheet" href="../public/css/admin.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloaiandtrang.css">
 </head>
 <body>
 
@@ -11,79 +12,85 @@
 
 <h1 class="form-title">Sửa Thể Loại</h1>
 
+<div id="api-message"></div>
+
 <div class="user-form">
-
-    <div style="margin-bottom:10px">
-        <input type="number" id="tl-id" placeholder="Nhập ID">
-        <button id="btn-load">Tải</button>
-    </div>
-
     <form id="form-edit">
         <input type="hidden" name="id" id="id">
-
         <table>
             <tr>
-                <td>Tên thể loại:</td>
+                <td>Nhập ID: <span class="required">*</span></td>
+                <td style="display:flex;gap:8px;align-items:center">
+                    <input type="number" id="tl-id" placeholder="VD: 1" style="flex:1">
+                    <button type="button" id="btn-load" class="btn-load">Tải</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Tên thể loại: <span class="required">*</span></td>
                 <td>
-                    <input type="text" name="ten_theloai" id="ten">
+                    <input type="text" name="ten_theloai" id="ten" placeholder="VD: Hành động">
                 </td>
             </tr>
         </table>
 
-        <button type="submit">Cập nhật</button>
-        <span id="msg"></span>
+        <div class="form-actions">
+            <button type="submit">Cập nhật</button>
+        </div>
     </form>
-
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-
+document.addEventListener('DOMContentLoaded', function () {
     const btnLoad = document.getElementById('btn-load');
     const idInput = document.getElementById('tl-id');
-
     const idField = document.getElementById('id');
     const tenField = document.getElementById('ten');
-    const msg = document.getElementById('msg');
+    const msg = document.getElementById('api-message');
 
-    // LOAD
     btnLoad.addEventListener('click', async () => {
         const id = idInput.value.trim();
-        if(!id) return alert('Nhập ID');
-
-        const res = await fetch(`../../../backend/api/theloai/get_theloai_api.php?id=${id}`);
-        const data = await res.json();
-
-        if(data.success){
-            idField.value = data.data.id;
-            tenField.value = data.data.ten_theloai;
-        } else {
-            alert(data.message);
+        if (!id) return alert('Nhập ID');
+        try {
+            const res = await fetch(`../../../backend/api/theloai/get_theloai_api.php?id=${id}`);
+            const data = await res.json();
+            if (data.success) {
+                idField.value = data.data.id;
+                tenField.value = data.data.ten_theloai;
+                msg.style.color = 'var(--success)';
+                msg.textContent = 'Đã tải thể loại ID=' + id;
+            } else {
+                alert(data.message);
+            }
+        } catch (err) {
+            alert('Lỗi: ' + err.message);
         }
     });
 
-    // UPDATE
-    document.getElementById('form-edit').addEventListener('submit', async (e)=>{
+    document.getElementById('form-edit').addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        const fd = new FormData(e.target);
-
-        const res = await fetch('../../../backend/api/theloai/edit_theloai_api.php', {
-            method: 'POST',
-            body: fd
-        });
-
-        const data = await res.json();
-
-        if(data.success){
-            msg.style.color = 'green';
-            msg.textContent = 'Cập nhật thành công';
-        } else {
-            msg.style.color = 'red';
-            msg.textContent = data.message;
+        msg.textContent = '';
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        try {
+            const res = await fetch('../../../backend/api/theloai/edit_theloai_api.php', {
+                method: 'POST',
+                body: new FormData(e.target)
+            });
+            const data = await res.json();
+            if (data.success) {
+                msg.style.color = 'var(--success)';
+                msg.textContent = data.message || 'Cập nhật thành công';
+            } else {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = data.message || 'Cập nhật thất bại';
+            }
+        } catch (err) {
+            msg.style.color = 'var(--danger)';
+            msg.textContent = 'Lỗi: ' + err.message;
+        } finally {
+            btn.disabled = false;
         }
     });
-
 });
 </script>
 

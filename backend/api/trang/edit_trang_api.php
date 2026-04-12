@@ -19,7 +19,7 @@ $data = [
     'id'       => $_POST['id']       ?? 0,
     'so_trang' => $_POST['so_trang'] ?? 0,
     'loai'     => $_POST['loai']     ?? 'image',
-    'noi_dung' => $_POST['noi_dung'] ?? ''
+
 ];
 
 $response = $controller->updateApi($data, $_FILES);

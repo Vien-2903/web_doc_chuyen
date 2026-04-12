@@ -2,17 +2,17 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm Trang</title>
-    <link rel="stylesheet" href="../../public/css/admin.css">
-    <link rel="stylesheet" href="../../public/css/trang.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloaiandtrang.css">
 </head>
 <body>
 
-<a href="../../index.php?page=admin&controller=trang&action=index" class="btn-home">
-    ← Quay lại
-</a>
+<a href="../../index.php?page=admin&controller=trang&action=index" class="btn-home">← Quay lại</a>
 
 <h1 class="form-title">Thêm Trang Mới</h1>
+
+<div id="api-message"></div>
 
 <div class="user-form">
     <form id="formTrang" enctype="multipart/form-data">
@@ -34,17 +34,12 @@
             <tr>
                 <td>Loại: <span class="required">*</span></td>
                 <td>
-                    <select name="loai" required>
-                        <option value="image">Ảnh</option>
-                        <option value="text">Văn bản</option>
-                    </select>
+                   Ảnh
+                    
                 </td>
             </tr>
             <tr>
-                <td>Nội dung:</td>
-                <td>
-                    <textarea name="noi_dung" rows="6" placeholder="Nhập nội dung trang..."></textarea>
-                </td>
+                
             </tr>
             <tr>
                 <td>Ảnh:</td>
@@ -56,42 +51,34 @@
 
         <div class="form-actions">
             <button type="submit">Thêm trang</button>
-            <a href="../../index.php?page=admin&controller=trang&action=index" class="btn-back">Hủy</a>
         </div>
     </form>
 </div>
 
-<div id="api-message" style="text-align:center;margin-top:10px;"></div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
-    const form   = document.getElementById('formTrang');
-    const msgBox = document.getElementById('api-message');
+    const form         = document.getElementById('formTrang');
+    const msgBox       = document.getElementById('api-message');
     const selectChuong = document.getElementById('id_chuong');
 
-    // Lấy id_chuong từ URL nếu có
-    const urlParams = new URLSearchParams(window.location.search);
-    const idChuongFromUrl = urlParams.get('id_chuong');
+    const urlParams        = new URLSearchParams(window.location.search);
+    const idChuongFromUrl  = urlParams.get('id_chuong');
 
-    // Load danh sách chương
     async function loadChuong() {
         try {
-            const res  = await fetch('../../../backend/api/chuong/get_all_chuong_api.php');
+            const res  = await fetch('../../../backend/api/trang/get_trang_api.php?all_chuong=1');
             const data = await res.json();
-
-            if (data.success && Array.isArray(data.chuongs)) {
-                data.chuongs.forEach(function (c) {
-                    const opt = document.createElement('option');
-                    opt.value       = c.id;
-                    opt.textContent = 'Chương ' + c.so_chuong + ' - ' + (c.tieu_de || '');
-                    // Tự chọn nếu URL có id_chuong
-                    if (idChuongFromUrl && String(c.id) === String(idChuongFromUrl)) {
-                        opt.selected = true;
-                    }
-                    selectChuong.appendChild(opt);
-                });
-            }
+            if (data.success && Array.isArray(data.data)) {
+    data.data.forEach(function (c) {
+        const opt = document.createElement('option');
+        opt.value       = c.id;
+        opt.textContent = 'Chương ' + c.so_chuong + ' - ' + (c.tieu_de || '');
+        if (idChuongFromUrl && String(c.id) === String(idChuongFromUrl)) {
+            opt.selected = true;
+        }
+        selectChuong.appendChild(opt);
+    });
+}
         } catch (err) {
             console.error('Lỗi tải chương:', err);
         }
@@ -99,45 +86,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadChuong();
 
-    // Submit form
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
-
         msgBox.textContent = '';
         const btn = form.querySelector('button[type="submit"]');
         btn.disabled = true;
-
-        const formData = new FormData(form);
-
         try {
             const res  = await fetch('../../../backend/api/trang/add_trang_api.php', {
                 method: 'POST',
-                body: formData
+                body: new FormData(form)
             });
-
             const data = await res.json();
-
             if (res.ok && data.success) {
-                msgBox.style.color  = 'green';
-                msgBox.textContent  = data.message || 'Thêm trang thành công';
+                msgBox.style.color = 'var(--success)';
+                msgBox.textContent = data.message || 'Thêm trang thành công';
+               if (res.ok && data.success) {
+    msgBox.style.color = 'var(--success)';
+    msgBox.textContent = data.message || 'Thêm trang thành công';
 
-                setTimeout(function () {
-                    window.location.href = '../../index.php?page=admin&controller=trang&action=index';
-                }, 800);
+    // Reset form để nhập tiếp
+    form.reset();
 
+    // Reset select về mặc định
+    selectChuong.value = '';
+
+}
             } else {
-                msgBox.style.color = 'red';
+                msgBox.style.color = 'var(--danger)';
                 msgBox.textContent = data.message || 'Thêm thất bại';
             }
-
         } catch (err) {
-            msgBox.style.color = 'red';
+            msgBox.style.color = 'var(--danger)';
             msgBox.textContent = 'Lỗi: ' + err.message;
         } finally {
             btn.disabled = false;
         }
     });
-
 });
 </script>
 

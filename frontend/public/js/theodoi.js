@@ -1,4 +1,6 @@
 ﻿const followedStoryIds = new Set();
+let listenersBound = false;
+let refreshTimeout = null;
 
 function ensureToastContainer() {
     let container = document.getElementById('toastContainer');
@@ -28,28 +30,25 @@ function showToast(message, type = 'success') {
     }, 2200);
 }
 
-function getLoggedInUser() {
-    try {
-        return JSON.parse(localStorage.getItem('user') || 'null');
-    } catch (error) {
-        return null;
-    }
+function redirectToLogin() {
+    window.location.href = '/web_doc_truyen/frontend/view/log/login.html';
 }
 
 async function loadFollowedIds() {
-    const user = getLoggedInUser();
-    if (!user || !user.id) {
-        return;
-    }
-
     followedStoryIds.clear();
 
     try {
         const response = await fetch('/web_doc_truyen/backend/api/theo_doi_truyen/get_by_user_theodoi_api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_nguoidung: user.id })
+            credentials: 'same-origin',
+            body: JSON.stringify({})
         });
+
+        if (response.status === 401) {
+            localStorage.removeItem('followedStoryIds');
+            return;
+        }
 
         const data = await response.json();
         if (response.ok && data.success && Array.isArray(data.data)) {
@@ -74,16 +73,41 @@ function updateFollowButton(button, isFollowing) {
     button.setAttribute('aria-label', button.title);
 }
 
+function updateAllFollowButtons() {
+    document.querySelectorAll('.follow-card-button').forEach((button) => {
+        const storyId = Number(button.dataset.storyId || 0);
+        if (!storyId) return;
+        updateFollowButton(button, followedStoryIds.has(storyId));
+    });
+}
+
+function setFollowedFromServerList(list) {
+    followedStoryIds.clear();
+    if (Array.isArray(list)) {
+        list.forEach((item) => {
+            const id = Number(item.id || item.id_truyen || 0);
+            if (id) followedStoryIds.add(id);
+        });
+    }
+
+    localStorage.setItem('followedStoryIds', JSON.stringify(Array.from(followedStoryIds)));
+    localStorage.setItem('followListUpdatedAt', String(Date.now()));
+    updateAllFollowButtons();
+}
+
 function bindFollowButtons() {
     document.querySelectorAll('.follow-card-button').forEach((button) => {
+        if (button.dataset.boundFollowClick === '1') {
+            return;
+        }
+
         button.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
 
             const storyId = Number(button.dataset.storyId || 0);
-            const user = getLoggedInUser();
-            if (!user || !user.id) {
-                window.alert('Bạn cần đăng nhập để theo dõi truyện.');
+            if (!storyId) {
+                showToast('Thiếu ID truyện để theo dõi.', 'error');
                 return;
             }
 
@@ -103,23 +127,21 @@ function bindFollowButtons() {
                 const response = await fetch('/web_doc_truyen/backend/api/theo_doi_truyen/toggle_theodoi_api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_nguoidung: user.id, id_truyen: storyId })
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ id_truyen: storyId })
                 });
+
+                if (response.status === 401) {
+                    window.alert('Bạn cần đăng nhập để theo dõi truyện.');
+                    redirectToLogin();
+                    return;
+                }
 
                 const data = await response.json();
                 if (response.ok && data.success) {
                     const nowFollowing = Boolean(data.is_following);
 
-                    followedStoryIds.clear();
-                    if (Array.isArray(data.following)) {
-                        data.following.forEach((item) => {
-                            const id = Number(item.id || item.id_truyen || 0);
-                            if (id) followedStoryIds.add(id);
-                        });
-                    }
-
-                    localStorage.setItem('followedStoryIds', JSON.stringify(Array.from(followedStoryIds)));
-                    localStorage.setItem('followListUpdatedAt', String(Date.now()));
+                    setFollowedFromServerList(data.following);
                     updateFollowButton(button, nowFollowing);
                     showToast(nowFollowing ? 'Đã theo dõi truyện.' : 'Đã bỏ theo dõi truyện.', 'success');
 
@@ -141,6 +163,8 @@ function bindFollowButtons() {
                 button.disabled = false;
             }
         });
+
+        button.dataset.boundFollowClick = '1';
     });
 }
 
@@ -150,20 +174,70 @@ function addFollowButtons() {
         if (!storyId) return;
 
         const isFollowing = followedStoryIds.has(Number(storyId));
-        const followBtn = document.createElement('button');
+        let followBtn = card.querySelector('.follow-card-button');
 
-        followBtn.type = 'button';
-        followBtn.className = 'follow-card-button';
-        followBtn.dataset.storyId = storyId;
+        if (!followBtn) {
+            followBtn = document.createElement('button');
+            followBtn.type = 'button';
+            followBtn.className = 'follow-card-button';
+            followBtn.dataset.storyId = storyId;
+            card.appendChild(followBtn);
+        }
 
         updateFollowButton(followBtn, isFollowing);
-        card.appendChild(followBtn);
     });
 
     bindFollowButtons();
 }
 
+function scheduleFollowRefresh() {
+    if (refreshTimeout) {
+        clearTimeout(refreshTimeout);
+    }
+
+    refreshTimeout = setTimeout(async () => {
+        await loadFollowedIds();
+        addFollowButtons();
+        updateAllFollowButtons();
+        refreshTimeout = null;
+    }, 120);
+}
+
+function bindAutoRefreshEvents() {
+    if (listenersBound) {
+        return;
+    }
+
+    window.addEventListener('storage', function (event) {
+        if (event.key === 'followListUpdatedAt' || event.key === 'followedStoryIds') {
+            scheduleFollowRefresh();
+        }
+    });
+
+    window.addEventListener('pageshow', function () {
+        scheduleFollowRefresh();
+    });
+
+    window.addEventListener('focus', function () {
+        scheduleFollowRefresh();
+    });
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            scheduleFollowRefresh();
+        }
+    });
+
+    window.addEventListener('followingUpdated', function () {
+        scheduleFollowRefresh();
+    });
+
+    listenersBound = true;
+}
+
 async function initializeTheoDoiTruyen() {
     await loadFollowedIds();
     addFollowButtons();
+    updateAllFollowButtons();
+    bindAutoRefreshEvents();
 }

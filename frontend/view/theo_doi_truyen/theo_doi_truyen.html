@@ -49,36 +49,8 @@
             }, 2200);
         }
 
-        async function getCurrentUser() {
-            try {
-                const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-                if (storedUser && storedUser.id) return storedUser;
-            } catch (error) {}
-
-            try {
-                const response = await fetch('/web_doc_truyen/backend/api/profile/profile_api.php', {
-                    method: 'GET',
-                    credentials: 'same-origin'
-                });
-
-                if (!response.ok) return null;
-
-                const data = await response.json();
-                if (data && data.success && data.data && data.data.id) {
-                    const user = {
-                        id: data.data.id,
-                        username: data.data.ten_dang_nhap || '',
-                        email: data.data.email || '',
-                        role: data.data.vai_tro || 'user'
-                    };
-                    localStorage.setItem('user', JSON.stringify(user));
-                    return user;
-                }
-            } catch (error) {
-                console.warn('Không thể lấy thông tin user từ server:', error);
-            }
-
-            return null;
+        function redirectToLogin() {
+            window.location.href = '/web_doc_truyen/frontend/view/log/login.html';
         }
 
         function resolveCoverUrl(anhBia) {
@@ -148,7 +120,7 @@
                 const imageUrl = resolveCoverUrl(item.anh_bia);
                 return `
                     <article class="favorite-card" data-id="${item.id}">
-                        <a class="favorite-link" href="/web_doc_truyen/frontend/public/index.php?page=chitiet&id=${item.id}">
+                        <a class="favorite-link" href="/web_doc_truyen/frontend/view/truyen/chitiet.html?id=${item.id}">
                             <div class="favorite-cover">
                                 <img src="${imageUrl}" alt="${item.ten_truyen}" onerror="this.src='https://via.placeholder.com/180x240/667eea/ffffff?text=No+Image'">
                             </div>
@@ -165,12 +137,6 @@
 
             document.querySelectorAll('.btn-remove-favorite').forEach(button => {
                 button.addEventListener('click', async function () {
-                    const user = await getCurrentUser();
-                    if (!user || !user.id) {
-                        window.location.href = '/web_doc_truyen/frontend/view/log/login.html';
-                        return;
-                    }
-
                     const truyenId = button.dataset.id;
                     const card = button.closest('.favorite-card');
                     const confirmRemove = window.confirm('Bạn có đồng ý bỏ theo dõi truyện này không?');
@@ -183,8 +149,15 @@
                         const response = await fetch('/web_doc_truyen/backend/api/theo_doi_truyen/remove_theodoi_api.php', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ id_nguoidung: user.id, id_truyen: truyenId })
+                            credentials: 'same-origin',
+                            body: JSON.stringify({ id_truyen: truyenId })
                         });
+
+                        if (response.status === 401) {
+                            redirectToLogin();
+                            return;
+                        }
+
                         const data = await response.json();
 
                         if (response.ok && data.success) {
@@ -214,20 +187,20 @@
         }
 
         async function loadFollowing() {
-            const user = await getCurrentUser();
-            if (!user || !user.id) {
-                apiMessage.textContent = 'Bạn cần đăng nhập để xem danh sách theo dõi.';
-                apiMessage.className = 'api-message warning';
-                renderEmptyState();
-                return;
-            }
-
             try {
                 const response = await fetch('/web_doc_truyen/backend/api/theo_doi_truyen/get_by_user_theodoi_api.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_nguoidung: user.id })
+                    credentials: 'same-origin',
+                    body: JSON.stringify({})
                 });
+
+                if (response.status === 401) {
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('user');
+                    redirectToLogin();
+                    return;
+                }
 
                 const data = await response.json();
                 if (response.ok && data.success && Array.isArray(data.data)) {

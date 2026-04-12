@@ -105,6 +105,53 @@ class TacGiaModel {
         $row = mysqli_fetch_assoc($result);
         return $row['total'];
     }
+
+    // Kiểm tra tổng dữ liệu liên quan theo cột id_tacgia ở các bảng khác
+    public function countRelatedRows($id_tacgia) {
+        $conn = $this->db->connect();
+        $id_tacgia = (int)$id_tacgia;
+
+        $sqlTables = "SELECT TABLE_NAME
+                      FROM INFORMATION_SCHEMA.COLUMNS
+                      WHERE TABLE_SCHEMA = DATABASE()
+                        AND COLUMN_NAME = 'id_tacgia'
+                        AND TABLE_NAME <> 'tacgia'";
+
+        $tablesResult = mysqli_query($conn, $sqlTables);
+        if (!$tablesResult) {
+            return 0;
+        }
+
+        $total = 0;
+        while ($row = mysqli_fetch_assoc($tablesResult)) {
+            $tableName = $row['TABLE_NAME'];
+
+            // Tên bảng lấy từ metadata DB nội bộ, vẫn escape để an toàn ký tự backtick.
+            $safeTable = str_replace('`', '``', $tableName);
+            $countSql = "SELECT COUNT(*) AS total FROM `{$safeTable}` WHERE id_tacgia = ?";
+            $stmt = mysqli_prepare($conn, $countSql);
+
+            if (!$stmt) {
+                continue;
+            }
+
+            mysqli_stmt_bind_param($stmt, "i", $id_tacgia);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+
+            if ($result) {
+                $countRow = mysqli_fetch_assoc($result);
+                $total += (int)($countRow['total'] ?? 0);
+            }
+        }
+
+        return $total;
+    }
+
+    public function hasRelatedData($id_tacgia) {
+        return $this->countRelatedRows($id_tacgia) > 0;
+    }
+
     // Tìm kiếm tác giả theo tên hoặc bút danh
     public function search($keyword) {
         $conn = $this->db->connect();

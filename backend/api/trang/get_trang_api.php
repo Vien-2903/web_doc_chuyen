@@ -15,13 +15,23 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 require_once(__DIR__ . '/../../controller/TrangController.php');
 $controller = new TrangController();
 
-if (isset($_GET['id_chuong'])) {
-    $response = $controller->getByChuan($_GET['id_chuong']);
-} elseif (isset($_GET['id'])) {
+if (isset($_GET['id'])) {
+   
     $response = $controller->getByIdApi($_GET['id']);
+
+} elseif (isset($_GET['id_chuong'])) {
+   
+    $response = $controller->getByChuan($_GET['id_chuong']);
+
+} elseif (isset($_GET['all_chuong'])) {
+    
+    require_once(__DIR__ . '/../../controller/ChuongController.php');
+    $chuongController = new ChuongController();
+    $response = $chuongController->getAllChuongApi();
+
 } else {
     http_response_code(400);
-    echo json_encode(["success" => false, "message" => "Thiếu tham số"], JSON_UNESCAPED_UNICODE);
+    echo json_encode(["success" => false, "message" => "Thiếu tham số id, id_chuong hoặc all_chuong"], JSON_UNESCAPED_UNICODE);
     exit();
 }
 

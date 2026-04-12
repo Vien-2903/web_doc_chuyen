@@ -18,13 +18,27 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (empty($_SESSION['user']['id'])) {
+    http_response_code(401);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Ban can dang nhap de theo doi truyen.',
+        'login_required' => true
+    ], JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
 require_once(__DIR__ . '/../../controller/TheoDoiTruyenController.php');
 
 $controller = new TheoDoiTruyenController(true);
 $input = json_decode(file_get_contents('php://input'), true) ?: [];
 
 $data = [
-    'id_nguoidung' => $input['id_nguoidung'] ?? '',
+    'id_nguoidung' => (int)$_SESSION['user']['id'],
     'id_truyen' => $input['id_truyen'] ?? ''
 ];
 

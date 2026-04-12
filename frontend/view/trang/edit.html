@@ -2,137 +2,151 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sửa Trang</title>
-    <link rel="stylesheet" href="../../public/css/admin.css">
-    <link rel="stylesheet" href="../../public/css/trang.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloaiandtrang.css">
 </head>
 <body>
 
-<a href="../../index.php?page=admin&controller=trang&action=index" class="btn-home">
-    ← Quay lại
-</a>
+<a href="../../index.php?page=admin&controller=trang&action=index" class="btn-home">← Quay lại</a>
 
 <h1 class="form-title">Sửa Trang</h1>
+
+<div id="api-message"></div>
 
 <div class="user-form">
     <form id="formSuaTrang" enctype="multipart/form-data">
         <table>
+
+            <!-- ✅ NHẬP ID -->
+            <tr>
+                <td>Nhập ID trang: <span class="required">*</span></td>
+                <td style="display:flex;gap:8px;">
+                    <input type="number" id="trang-id" placeholder="VD: 1" style="flex:1">
+                    <button type="button" id="btn-load">Tải</button>
+                </td>
+            </tr>
+
             <tr>
                 <td>Trang số: <span class="required">*</span></td>
                 <td>
                     <input type="number" name="so_trang" id="so_trang" min="1" required>
                 </td>
             </tr>
+
             <tr>
                 <td>Loại: <span class="required">*</span></td>
                 <td>
-                    <select name="loai" id="loai" required>
-                        <option value="image">Ảnh</option>
-                        <option value="text">Văn bản</option>
-                    </select>
+                    Ảnh
                 </td>
             </tr>
+
             <tr>
-                <td>Nội dung:</td>
-                <td>
-                    <textarea name="noi_dung" id="noi_dung" rows="6" placeholder="Nhập nội dung trang..."></textarea>
-                </td>
+               
             </tr>
+
             <tr>
                 <td>Ảnh hiện tại:</td>
                 <td>
-                    <img id="anh-hien-tai"
-                         src=""
-                         style="max-width:250px;border-radius:8px;display:none;margin-bottom:10px;"
-                         onerror="this.src='https://via.placeholder.com/250x350/2c3e50/ffffff?text=No+Image'">
-                    <span id="no-anh" style="color:#999;">Chưa có ảnh</span>
+                    <img id="anh-hien-tai" class="anh-preview"
+                         style="display:none"
+                         onerror="this.src='https://via.placeholder.com/220x300/e5e7eb/9ca3af?text=No+Image'">
+                    <span id="no-anh">Chưa có ảnh</span>
                 </td>
             </tr>
+
             <tr>
                 <td>Đổi ảnh:</td>
                 <td>
                     <input type="file" name="anh" accept="image/*">
-                    <small style="color:#666;">Để trống nếu không đổi ảnh</small>
                 </td>
             </tr>
+
         </table>
 
         <div class="form-actions">
             <button type="submit">Cập nhật</button>
-            <a href="../../index.php?page=admin&controller=trang&action=index" class="btn-back">Hủy</a>
         </div>
     </form>
 </div>
 
-<div id="api-message" style="text-align:center;margin-top:10px;"></div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    const form    = document.getElementById('formSuaTrang');
-    const msgBox  = document.getElementById('api-message');
+    const form   = document.getElementById('formSuaTrang');
+    const msgBox = document.getElementById('api-message');
+    const btnLoad = document.getElementById('btn-load');
+    const idInput = document.getElementById('trang-id');
 
-    // Lấy id từ URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
+    let currentId = null; // lưu ID đang sửa
 
-    if (!id) {
-        msgBox.style.color = 'red';
-        msgBox.textContent = 'Không tìm thấy ID trang';
-        return;
-    }
+    btnLoad.addEventListener('click', async () => {
+        const id = idInput.value.trim();
 
-    // Load thông tin trang hiện tại
-    async function loadTrang() {
+        if (!id) {
+            alert('Vui lòng nhập ID');
+            return;
+        }
+
         try {
             const res  = await fetch('../../../backend/api/trang/get_trang_api.php?id=' + id);
             const data = await res.json();
 
             if (!data.success) {
-                msgBox.style.color = 'red';
-                msgBox.textContent = data.message || 'Không tải được dữ liệu';
+                msgBox.style.color = 'var(--danger)';
+                msgBox.textContent = data.message || 'Không tìm thấy';
                 return;
             }
 
             const t = data.trang;
+            currentId = t.id;
 
-            // Điền dữ liệu vào form
-            document.getElementById('so_trang').value  = t.so_trang || '';
-            document.getElementById('noi_dung').value  = t.noi_dung || '';
+            document.getElementById('so_trang').value = t.so_trang || '';
+         
 
-            // Set loại
-            const selectLoai = document.getElementById('loai');
-            for (let opt of selectLoai.options) {
-                if (opt.value === t.loai) opt.selected = true;
-            }
+            // loại
+           const selectLoai = document.getElementById('loai');
 
-            // Hiện ảnh nếu có
-            const anhEl  = document.getElementById('anh-hien-tai');
-            const noAnh  = document.getElementById('no-anh');
+if (selectLoai) {
+    selectLoai.value = 'Ảnh';
+}
+
+            // ảnh
+            const anhEl = document.getElementById('anh-hien-tai');
+            const noAnh = document.getElementById('no-anh');
+
             if (t.anh) {
-                anhEl.src          = '/web_doc_truyen/' + t.anh.replace(/^\/web_doc_truyen\//, '');
+                anhEl.src = '/web_doc_truyen/backend/' + t.anh;
                 anhEl.style.display = 'block';
                 noAnh.style.display = 'none';
+            } else {
+                anhEl.style.display = 'none';
+                noAnh.style.display = 'block';
             }
 
+            msgBox.textContent = '';
+
         } catch (err) {
-            msgBox.style.color = 'red';
-            msgBox.textContent = 'Lỗi tải dữ liệu: ' + err.message;
+            msgBox.style.color = 'var(--danger)';
+            msgBox.textContent = 'Lỗi: ' + err.message;
         }
-    }
+    });
 
-    loadTrang();
-
-    // Submit cập nhật
+    // ================= UPDATE =================
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
+
+        if (!currentId) {
+            alert('Vui lòng tải trang trước');
+            return;
+        }
 
         msgBox.textContent = '';
         const btn = form.querySelector('button[type="submit"]');
         btn.disabled = true;
 
         const formData = new FormData(form);
-        formData.append('id', id);
+        formData.append('id', currentId);
 
         try {
             const res  = await fetch('../../../backend/api/trang/edit_trang_api.php', {
@@ -143,20 +157,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await res.json();
 
             if (res.ok && data.success) {
-                msgBox.style.color = 'green';
+                msgBox.style.color = 'var(--success)';
                 msgBox.textContent = data.message || 'Cập nhật thành công';
-
-                setTimeout(function () {
-                    window.location.href = '../../index.php?page=admin&controller=trang&action=index';
-                }, 800);
-
             } else {
-                msgBox.style.color = 'red';
+                msgBox.style.color = 'var(--danger)';
                 msgBox.textContent = data.message || 'Cập nhật thất bại';
             }
 
         } catch (err) {
-            msgBox.style.color = 'red';
+            msgBox.style.color = 'var(--danger)';
             msgBox.textContent = 'Lỗi: ' + err.message;
         } finally {
             btn.disabled = false;

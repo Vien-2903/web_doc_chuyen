@@ -2,84 +2,89 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thêm Thể Loại</title>
-    <link rel="stylesheet" href="../../public/css/admin.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloaiandtrang.css">
 </head>
 <body>
-
-<a href="../../index.php?page=admin&controller=theloai&action=index" class="btn-home">
+ 
+<a href="index.html?page=admin&controller=theloai&action=index" class="btn-home">
     ← Quay lại
 </a>
-
+ 
 <h1 class="form-title">Thêm Thể Loại</h1>
-
+ 
+<div id="api-message"></div>
+ 
 <div class="user-form">
     <form id="formTheLoai">
         <table>
             <tr>
-                <td>Tên thể loại:</td>
+                <td>Tên thể loại: <span class="required">*</span></td>
                 <td>
-                    <input type="text" name="ten_theloai" required>
+                    <input type="text"
+                           name="ten_theloai"
+                           placeholder="VD: Hành động"
+                           required>
                 </td>
             </tr>
         </table>
-
+ 
         <div class="form-actions">
             <button type="submit">Thêm thể loại</button>
-            <a href="../../index.html?page=admin&controller=theloai&action=index" class="btn-back">Hủy</a>
+ 
         </div>
     </form>
 </div>
-
-<div id="api-message" style="text-align:center;margin-top:10px;"></div>
-
+ 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-
+document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formTheLoai');
     const msgBox = document.getElementById('api-message');
-
-    form.addEventListener('submit', async function(e){
+ 
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
-
+ 
         msgBox.textContent = '';
-        const btn = form.querySelector('button');
+        const btn = form.querySelector('button[type="submit"]');
         btn.disabled = true;
-
+ 
         const formData = new FormData(form);
-
+ 
         try {
             const res = await fetch('../../../backend/api/theloai/add_theloai_api.php', {
                 method: 'POST',
                 body: formData
             });
-
+ 
             const data = await res.json();
-
-            if(res.ok && data.success){
-                msgBox.style.color = 'green';
+ 
+            if (res.ok && data.success) {
+                msgBox.style.color = 'var(--success)';
                 msgBox.textContent = data.message || 'Thêm thành công';
+ 
+                if (res.ok && data.success) {
+    msgBox.style.color = 'var(--success)';
+    msgBox.textContent = data.message || 'Thêm thể loại thành công';
 
-                setTimeout(()=>{
-                    window.location.href = '../../public/index.html?page=admin&controller=theloai&action=index';
-                }, 800);
+    // Reset form để nhập tiếp
+    form.reset();
 
+ 
+}
             } else {
-                msgBox.style.color = 'red';
+                msgBox.style.color = 'var(--danger)';
                 msgBox.textContent = data.message || 'Thêm thất bại';
             }
-
-        } catch(err){
-            msgBox.style.color = 'red';
+        } catch (err) {
+            msgBox.style.color = 'var(--danger)';
             msgBox.textContent = 'Lỗi: ' + err.message;
         } finally {
             btn.disabled = false;
         }
-
     });
-
 });
 </script>
-
+ 
 </body>
 </html>

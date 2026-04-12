@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/home.css?v=20260403-1">
     <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theo_doi_truyen.css?v=20260408-5">
     <link rel="stylesheet" href="../public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
-    <script src="/web_doc_truyen/frontend/public/js/theodoi.js?v=20260408-4"></script>
+    <script src="/web_doc_truyen/frontend/public/js/theodoi.js?v=20260413-2"></script>
 </head>
 <body>
     <div id="header-container"></div>
@@ -25,6 +25,8 @@
     <script>
         const headerContainer = document.getElementById('header-container');
         const storyGrid = document.getElementById('story-grid');
+        let homeRefreshTimer = null;
+        let isLoadingStories = false;
 
         async function loadHeader() {
             try {
@@ -148,6 +150,11 @@
         }
 
         async function loadStories() {
+            if (isLoadingStories) {
+                return;
+            }
+
+            isLoadingStories = true;
             try {
                 const response = await fetch('/web_doc_truyen/backend/api/truyen/truyen_api.php');
                 const data = await response.json();
@@ -160,11 +167,33 @@
             } catch (error) {
                 console.error('Lỗi tải danh sách truyện:', error);
                 storyGrid.innerHTML = '<div class="story-status"><h3>Không tải được dữ liệu</h3><p>Vui lòng thử lại sau.</p></div>';
+            } finally {
+                isLoadingStories = false;
             }
+        }
+
+        function scheduleHomeRefresh() {
+            if (homeRefreshTimer) {
+                clearTimeout(homeRefreshTimer);
+            }
+
+            homeRefreshTimer = setTimeout(() => {
+                loadStories();
+                homeRefreshTimer = null;
+            }, 120);
         }
 
         loadHeader();
         loadStories();
+
+        window.addEventListener('pageshow', scheduleHomeRefresh);
+        window.addEventListener('focus', scheduleHomeRefresh);
+        window.addEventListener('followingUpdated', scheduleHomeRefresh);
+        window.addEventListener('storage', function (event) {
+            if (event.key === 'followListUpdatedAt' || event.key === 'followedStoryIds') {
+                scheduleHomeRefresh();
+            }
+        });
     </script>
 </body>
 </html>
