@@ -14,12 +14,12 @@ class ChiTietTrangController {
         $this->lichSuModel = new LuuTrangDocModel();
     }
     
-    // HIỂN THỊ DANH SÁCH TRANG CỦA 1 CHƯƠNG
+    
     public function danhSachTrang() {
         $id_chuong = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
         if ($id_chuong <= 0) {
-            header('Location: index.php');
+            header('Location: index.html'); 
             exit();
         }
         
@@ -27,7 +27,7 @@ class ChiTietTrangController {
         $chuong = $this->chuongModel->getById($id_chuong);
         
         if (!$chuong) {
-            header('Location: index.php');
+            header('Location: index.html'); 
             exit();
         }
         
@@ -43,7 +43,7 @@ class ChiTietTrangController {
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
         if ($id <= 0) {
-            header('Location: index.php');
+            header('Location: index.html');
             exit();
         }
         
@@ -51,7 +51,7 @@ class ChiTietTrangController {
         $trang = $this->trangModel->getById($id);
         
         if (!$trang) {
-            header('Location: index.php');
+            header('Location: index.html'); 
             exit();
         }
         
@@ -59,12 +59,11 @@ class ChiTietTrangController {
         $chuong = $this->chuongModel->getById($trang['id_chuong']);
         
         if (!$chuong) {
-            header('Location: index.php');
+            header('Location: index.html'); 
             exit();
         }
         
-        // ==================== LƯU LỊCH SỬ ĐỌC ====================
-        // Nếu user đã đăng nhập, lưu vị trí đọc
+       
         if (isset($_SESSION['user'])) {
             $id_nguoidung = $_SESSION['user']['id'];
             $id_truyen = $chuong['id_truyen']; // Lấy id_truyen từ chương
@@ -74,7 +73,7 @@ class ChiTietTrangController {
             // Lưu vào database
             $this->lichSuModel->luuTrangDoc($id_nguoidung, $id_truyen, $id_chuong, $so_trang);
         }
-        // =========================================================
+     
         
         // Lấy tất cả trang của chương này
         $allTrangs = $this->trangModel->getByChuong($trang['id_chuong']);

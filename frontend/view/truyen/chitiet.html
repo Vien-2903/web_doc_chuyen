@@ -154,30 +154,51 @@
     }
 
     // Load danh sách chương
-    async function loadChuong(id_truyen) {
-        try {
-            const res = await fetch(`/web_doc_truyen/backend/api/chuong/get_all_chuong_api.php?id_truyen=${id_truyen}`);
-            const data = await res.json();
-            const chuongList = document.getElementById('chuong-list');
+   // Load danh sách chương - chuyển thẳng đến trang đầu tiên của chương
+async function loadChuong(id_truyen) {
+    try {
+        const res = await fetch(`/web_doc_truyen/backend/api/chuong/get_all_chuong_api.php?id_truyen=${id_truyen}`);
+        const data = await res.json();
+        const chuongList = document.getElementById('chuong-list');
 
-            if (!data.success || !data.data || data.data.length === 0) {
-                chuongList.innerHTML = '<div class="no-chuong">Chưa có chương nào</div>';
-                return;
+        if (!data.success || !data.data || data.data.length === 0) {
+            chuongList.innerHTML = '<div class="no-chuong">Chưa có chương nào</div>';
+            return;
+        }
+
+        // Với mỗi chương, cần lấy trang đầu tiên
+        for (const c of data.data) {
+            // Gọi API lấy danh sách trang của chương
+            const trangRes = await fetch(`/web_doc_truyen/backend/api/trang/get_danhsach_trang_api.php?id_chuong=${c.id}`);
+            const trangData = await trangRes.json();
+            
+            let firstPageId = null;
+            if (trangData.success) {
+                const trangs = trangData.trangs || trangData.data?.trangs || [];
+                if (trangs.length > 0) {
+                    firstPageId = trangs[0].id;
+                }
             }
-
-            chuongList.innerHTML = data.data.map(c => `
-                <a class="chuong-item" href="#">
+            
+            // Nếu có trang đầu tiên thì link đến đó, không thì vẫn đến danh sách
+            const linkHref = firstPageId 
+                ? `/web_doc_truyen/frontend/view/trang/chitiettrang.html?id=${firstPageId}`
+                : `/web_doc_truyen/frontend/view/trang/danhsach.html?id_chuong=${c.id}`;
+            
+            chuongList.innerHTML += `
+                <a class="chuong-item" href="${linkHref}">
                     <span class="chuong-so">Chương ${escapeHtml(String(c.so_chuong))}</span>
                     <span class="chuong-ten">${escapeHtml(c.ten_chuong || '')}</span>
                     <span class="chuong-ngay">${c.ngay_dang ? new Date(c.ngay_dang).toLocaleDateString('vi-VN') : ''}</span>
                 </a>
-            `).join('');
-
-        } catch (err) {
-            console.error('Lỗi load chương:', err);
-            document.getElementById('chuong-list').innerHTML = '<div class="error">Lỗi tải danh sách chương!</div>';
+            `;
         }
+
+    } catch (err) {
+        console.error('Lỗi load chương:', err);
+        document.getElementById('chuong-list').innerHTML = '<div class="error">Lỗi tải danh sách chương!</div>';
     }
+}
 
     // Khởi động
     const urlParams = new URLSearchParams(window.location.search);

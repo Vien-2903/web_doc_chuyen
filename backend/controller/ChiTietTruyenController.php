@@ -21,7 +21,7 @@ class ChiTietTruyenController {
         if (!isset($_SESSION['user'])) {
             echo "<script>
                     alert('Vui lòng đăng nhập để xem truyện!');
-                    window.location.href = '/web_doc_truyen/frontend/public/index.php?controller=login&action=login';
+                    window.location.href = '/web_doc_truyen/frontend/public/index.html?controller=login&action=login';
                   </script>";
             exit();
         }
@@ -30,7 +30,7 @@ class ChiTietTruyenController {
         $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
         
         if ($id <= 0) {
-            header('Location: /web_doc_truyen/frontend/public/index.php');
+            header('Location: /web_doc_truyen/frontend/public/index.html');
             exit();
         }
         
@@ -38,7 +38,7 @@ class ChiTietTruyenController {
         $truyen = $this->truyenModel->getTruyenById($id);
         
         if (!$truyen) {
-            header('Location: /web_doc_truyen/frontend/public/index.php');
+            header('Location: /web_doc_truyen/frontend/public/index.html');
             exit();
         }
         
@@ -50,7 +50,7 @@ class ChiTietTruyenController {
         $danhSachChuong = $this->chuongModel->getChuongByTruyenId($id);
         
         // Load view
-        require_once __DIR__ . '/../view/truyen/chitiet.php';
+        require_once __DIR__ . '/../view/truyen/chitiet.html';
     }
 }
 ?>

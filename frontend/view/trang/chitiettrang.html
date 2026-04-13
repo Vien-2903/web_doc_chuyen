@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đọc Trang</title>
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/home.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/theloai_user.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/chitiettruyen.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/comments.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/fonts/fontawesome-free-7.2.0-web/css/all.min.css">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <div class="container" id="main-content">
+        <div class="story-status">Đang tải...</div>
+    </div>
+
+    <script>
+        // ========== LOAD HEADER ==========
+        async function loadHeader() {
+            try {
+                const res = await fetch('/web_doc_truyen/frontend/view/layouts/user/header.html', { credentials: 'same-origin' });
+                if (!res.ok) return;
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const header = doc.querySelector('header');
+                const scripts = doc.querySelectorAll('script');
+                if (header) document.getElementById('header-container').innerHTML = header.outerHTML;
+                scripts.forEach(s => {
+                    const el = document.createElement('script');
+                    if (s.src) el.src = s.src; else el.textContent = s.textContent;
+                    document.body.appendChild(el);
+                });
+            } catch (e) { console.error('Lỗi tải header:', e); }
+        }
+
+        // ========== RESOLVE ẢNH ==========
+        function resolvePageImageUrl(anh) {
+            if (!anh) return '';
+            let s = String(anh).trim().replace(/\\/g, '/');
+
+            if (s.startsWith('http://') || s.startsWith('https://')) return s;
+
+            // Nếu đã có /web_doc_truyen/ ở đầu
+            if (s.startsWith('/web_doc_truyen/')) return s;
+
+            // Bỏ tiền tố web_doc_truyen/ nếu có
+            s = s.replace(/^web_doc_truyen\//, '');
+
+            // Nếu chỉ là tên file (không có /)
+            if (!s.includes('/')) {
+                return '/web_doc_truyen/backend/uploads/trang/' + s;
+            }
+
+            // Nếu đã có backend/uploads/trang/
+            if (s.startsWith('backend/uploads/trang/')) {
+                return '/web_doc_truyen/' + s;
+            }
+
+            // Các prefix cũ → lấy tên file rồi ghép đường dẫn chuẩn
+            const oldPrefixes = [
+                'uploads/trang/',
+                'frontend/public/uploads/trang/',
+                'frontend/images/trang/',
+                'images/trang/',
+            ];
+            for (const prefix of oldPrefixes) {
+                if (s.startsWith(prefix)) {
+                    const fileName = s.split('/').pop();
+                    return '/web_doc_truyen/backend/uploads/trang/' + fileName;
+                }
+            }
+
+            return '/web_doc_truyen/' + s;
+        }
+
+        function escapeHtml(v) {
+            return String(v ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        // ========== RENDER ==========
+        function render(data) {
+            const { trang, chuong, trangTruoc, trangSau } = data;
+
+            document.title = `Trang ${trang.so_trang} - Chương ${chuong.so_chuong}`;
+
+            // Nội dung trang
+            let noiDungHtml = '';
+            if (trang.loai === 'text') {
+                const text = escapeHtml(trang.noi_dung || '').replace(/\n/g, '<br>');
+                noiDungHtml = `<div class="text-content">${text}</div>`;
+            } else if (trang.loai === 'image') {
+                const src = resolvePageImageUrl(trang.anh || trang.noi_dung || '');
+                if (src) {
+                    noiDungHtml = `
+                        <div class="image-wrapper">
+                            <img src="${escapeHtml(src)}"
+                                 alt="Trang ${trang.so_trang}"
+                                 class="page-image"
+                                 onerror="this.src='https://via.placeholder.com/900x1300/2c3e50/ffffff?text=Image+Not+Found'">
+                        </div>`;
+                }
+            }
+
+            const BASE = '/web_doc_truyen/frontend/view/trang';
+
+            // Nút điều hướng
+            const btnTruoc = trangTruoc
+                ? `<a href="${BASE}/chitiettrang.html?id=${trangTruoc.id}" class="btn-nav btn-prev">← Trang trước</a>`
+                : `<span class="btn-nav btn-disabled">← Trang trước</span>`;
+
+            const btnSau = trangSau
+                ? `<a href="${BASE}/chitiettrang.html?id=${trangSau.id}" class="btn-nav btn-next">Trang sau →</a>`
+                : `<span class="btn-nav btn-disabled">Trang sau →</span>`;
+
+            document.getElementById('main-content').innerHTML = `
+                <!-- Nút quay lại -->
+                <div class="back-button-wrapper">
+                    <a href="${BASE}/danhsach.html?id_chuong=${escapeHtml(chuong.id)}" class="btn-back">← Quay lại</a>
+                </div>
+
+                <!-- Thông tin trang -->
+                <div class="page-header">
+                    <h1 class="page-title">
+                        Chương ${escapeHtml(String(chuong.so_chuong))}:
+                        ${escapeHtml(chuong.tieu_de || '')}
+                    </h1>
+                    <h2 class="page-number">Trang ${escapeHtml(String(trang.so_trang))}</h2>
+                </div>
+
+                <!-- Nội dung -->
+                <div class="page-content">
+                    ${noiDungHtml}
+                </div>
+
+                <!-- Điều hướng -->
+                <div class="page-navigation">
+                    ${btnTruoc}
+                    ${btnSau}
+                </div>
+            `;
+        }
+
+        // ========== LOAD DỮ LIỆU ==========
+        async function loadTrang() {
+            const params = new URLSearchParams(window.location.search);
+            const id = parseInt(params.get('id') || '0');
+
+            if (id <= 0) {
+                window.location.href = '/web_doc_truyen/frontend/view/index.html';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/web_doc_truyen/backend/api/trang/get_chitiet_trang_api.php?id=${id}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    document.getElementById('main-content').innerHTML =
+                        `<div class="story-status"><h3>Không tìm thấy trang</h3></div>`;
+                    return;
+                }
+
+                render(data);
+            } catch (e) {
+                console.error('Lỗi tải trang:', e);
+                document.getElementById('main-content').innerHTML =
+                    `<div class="story-status"><h3>Lỗi tải dữ liệu, vui lòng thử lại</h3></div>`;
+            }
+        }
+
+        loadHeader();
+        loadTrang();
+    </script>
+</body>
+</html>

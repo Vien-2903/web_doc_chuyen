@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Trang</title>
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/user.css">
+    <link rel="stylesheet" href="/web_doc_truyen/frontend/public/css/chitiettrang.css">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <div class="container" id="main-content">
+        <div class="story-status">Đang tải...</div>
+    </div>
+
+    <script>
+        // ========== LOAD HEADER ==========
+        async function loadHeader() {
+            try {
+                const res = await fetch('/web_doc_truyen/frontend/view/layouts/user/header.html', { credentials: 'same-origin' });
+                if (!res.ok) return;
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const header = doc.querySelector('header');
+                const scripts = doc.querySelectorAll('script');
+                if (header) document.getElementById('header-container').innerHTML = header.outerHTML;
+                scripts.forEach(s => {
+                    const el = document.createElement('script');
+                    if (s.src) el.src = s.src; else el.textContent = s.textContent;
+                    document.body.appendChild(el);
+                });
+            } catch (e) { console.error('Lỗi tải header:', e); }
+        }
+
+        function escapeHtml(v) {
+            return String(v ?? '')
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return dateStr;
+            return d.toLocaleDateString('vi-VN');
+        }
+
+        // ========== RENDER ==========
+        function render(chuong, danhSachTrang) {
+            document.title = `Danh Sách Trang - Chương ${chuong.so_chuong}`;
+
+            let trangHtml = '';
+            if (Array.isArray(danhSachTrang) && danhSachTrang.length > 0) {
+                trangHtml = `
+                    <div class="trang-grid">
+                        ${danhSachTrang.map(trang => `
+                            <div class="trang-card">
+                                <a href="/web_doc_truyen/frontend/view/trang/chitiettrang.html?id=${escapeHtml(String(trang.id))}">
+                                    <div class="page-num-label">Trang</div>
+                                    <div class="page-num-value">${escapeHtml(String(trang.so_trang))}</div>
+                                </a>
+                            </div>
+                        `).join('')}
+                    </div>`;
+            } else {
+                trangHtml = `<div class="empty-state"><p>Chưa có trang nào được đăng</p></div>`;
+            }
+
+            document.getElementById('main-content').innerHTML = `
+                <!-- Nút quay lại -->
+                <div class="back-button-wrapper">
+                    <a href="/web_doc_truyen/frontend/view/truyen/chitiet.html?id=${escapeHtml(String(chuong.id_truyen))}" class="btn-back">
+                        ← Quay lại
+                    </a>
+                </div>
+
+                <!-- Thông tin chương -->
+                <div class="page-header">
+                    <h1 class="page-title">
+                        Chương ${escapeHtml(String(chuong.so_chuong))}:
+                        ${escapeHtml(chuong.tieu_de || '')}
+                    </h1>
+                    <p class="page-number">${formatDate(chuong.ngay_dang)}</p>
+                </div>
+
+                <!-- Tiêu đề danh sách -->
+                <h2 class="section-title">Chọn Trang Để Đọc</h2>
+
+                <!-- Danh sách trang -->
+                ${trangHtml}
+            `;
+        }
+
+        // ========== LOAD DỮ LIỆU ==========
+        async function loadDanhSach() {
+            const params = new URLSearchParams(window.location.search);
+            const idChuong = parseInt(params.get('id_chuong') || '0');
+
+            if (idChuong <= 0) {
+                window.location.href = '/web_doc_truyen/frontend/view/index.html';
+                return;
+            }
+
+            try {
+                // Lấy danh sách trang
+                const resTrang = await fetch(`/web_doc_truyen/backend/api/trang/get_danhsach_trang_api.php?id_chuong=${idChuong}`);
+                const dataTrang = await resTrang.json();
+
+                if (!dataTrang.success) {
+                    document.getElementById('main-content').innerHTML =
+                        `<div class="story-status"><h3>Không tìm thấy chương</h3></div>`;
+                    return;
+                }
+
+                // dataTrang.body hoặc dataTrang trực tiếp tùy API trả về
+                const danhSachTrang = dataTrang.trangs || dataTrang.data || dataTrang.body?.trangs || [];
+                const chuong = dataTrang.chuong || dataTrang.body?.chuong || null;
+
+                if (!chuong) {
+                    document.getElementById('main-content').innerHTML =
+                        `<div class="story-status"><h3>Không tìm thấy thông tin chương</h3></div>`;
+                    return;
+                }
+
+                render(chuong, danhSachTrang);
+            } catch (e) {
+                console.error('Lỗi tải danh sách trang:', e);
+                document.getElementById('main-content').innerHTML =
+                    `<div class="story-status"><h3>Lỗi tải dữ liệu, vui lòng thử lại</h3></div>`;
+            }
+        }
+
+        loadHeader();
+        loadDanhSach();
+    </script>
+</body>
+</html>

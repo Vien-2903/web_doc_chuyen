@@ -46,7 +46,7 @@ class TrangController {
     }
 
     // API: Lấy danh sách trang theo chương
-    public function getByChuan($id_chuong) {
+    public function getByChuong($id_chuong) {
         $id_chuong = intval($id_chuong);
 
         if ($id_chuong <= 0) {
