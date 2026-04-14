@@ -27,6 +27,8 @@
         const storyGrid = document.getElementById('story-grid');
         let homeRefreshTimer = null;
         let isLoadingStories = false;
+        let cachedLoginStatus = null;
+        let cachedLoginCheckedAt = 0;
 
         async function loadHeader() {
             try {
@@ -139,7 +141,7 @@
                             <h3>${title}</h3>
                             <p>Tác giả: ${author}</p>
                             <div class="story-meta">
-                                <span><i class="fa-solid fa-eye"></i> ${formatViewCount(story.luot_xem)}</span>
+                                <span></span>
                             </div>
                         </a>
                     </article>
@@ -147,6 +149,82 @@
             }).join('');
 
             initializeTheoDoiTruyen();
+        }
+
+        function getLoginStatusFromHeaderDom() {
+            const navRight = headerContainer.querySelector('#nav-right');
+            if (!navRight) {
+                return null;
+            }
+
+            if (navRight.querySelector('.logout-outside')) {
+                return true;
+            }
+
+            const loginLink = navRight.querySelector('.login-state-btn');
+            if (loginLink && /đăng\s*nhập/i.test(loginLink.textContent || '')) {
+                return false;
+            }
+
+            return null;
+        }
+
+        async function checkUserLoggedIn() {
+            const domStatus = getLoginStatusFromHeaderDom();
+            if (domStatus !== null) {
+                cachedLoginStatus = domStatus;
+                cachedLoginCheckedAt = Date.now();
+                return domStatus;
+            }
+
+            const now = Date.now();
+            if (cachedLoginStatus !== null && now - cachedLoginCheckedAt < 10000) {
+                return cachedLoginStatus;
+            }
+
+            try {
+                const response = await fetch('/web_doc_truyen/backend/api/theloai/theloai_header_api.php', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Không kiểm tra được trạng thái đăng nhập.');
+                }
+
+                const data = await response.json();
+                const isLoggedIn = Boolean(data && data.user && data.user.isLoggedIn);
+                cachedLoginStatus = isLoggedIn;
+                cachedLoginCheckedAt = now;
+                return isLoggedIn;
+            } catch (error) {
+                console.warn('Không kiểm tra được trạng thái đăng nhập:', error);
+                return false;
+            }
+        }
+
+        function bindStoryLoginGuard() {
+            storyGrid.addEventListener('click', async function (event) {
+                if (event.target.closest('.follow-card-button')) {
+                    return;
+                }
+
+                const storyLink = event.target.closest('.story-card a[href]');
+                if (!storyLink) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                const isLoggedIn = await checkUserLoggedIn();
+                if (!isLoggedIn) {
+                    window.alert('Bạn cần đăng nhập để đọc truyện.');
+                    return;
+                }
+
+                window.location.href = storyLink.href;
+            });
         }
 
         async function loadStories() {
@@ -185,6 +263,7 @@
 
         loadHeader();
         loadStories();
+        bindStoryLoginGuard();
 
         window.addEventListener('pageshow', scheduleHomeRefresh);
         window.addEventListener('focus', scheduleHomeRefresh);
