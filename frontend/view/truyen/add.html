@@ -72,75 +72,117 @@
         </form>
     </div>
     <div id="api-message"></div>
-    <script>
-    document.addEventListener('DOMContentLoaded', function(){
-        // Load authors into the select via API
-        async function loadAuthors(){
-            const sel = document.querySelector('select[name="id_tacgia"]');
-            if(!sel) return;
-            sel.innerHTML = '<option value="">-- Đang tải tác giả... --</option>';
-            try{
-                const res = await fetch('../../../backend/api/tacgia/tacgia_list_api.php', { method: 'GET', cache: 'no-store' });
-                if(!res.ok) throw new Error('HTTP ' + res.status);
-                const json = await res.json();
-                if(json && json.success && Array.isArray(json.data) && json.data.length){
-                    sel.innerHTML = '<option value="">-- Chọn tác giả --</option>';
-                    json.data.forEach(function(a){
-                        const opt = document.createElement('option');
-                        opt.value = a.id;
-                        opt.textContent = a.ten_tacgia || a.but_danh || ('Tác giả ' + a.id);
-                        sel.appendChild(opt);
-                    });
-                } else {
-                    sel.innerHTML = '<option value="">Không có tác giả</option>';
-                }
-            } catch(err){
-                console.error('Lỗi khi tải danh sách tác giả:', err);
-                sel.innerHTML = '<option value="">Không thể tải tác giả</option>';
-                const msgBox = document.getElementById('api-message');
-                if(msgBox){ msgBox.style.color = 'red'; msgBox.textContent = 'Không tải được danh sách tác giả (kiểm tra API).'; }
-            }
-        }
-        loadAuthors();
+   <script>
+document.addEventListener('DOMContentLoaded', function(){
 
-        const form = document.querySelector('form');
-        const msgBox = document.getElementById('api-message');
-        form.addEventListener('submit', async function(e){
-            e.preventDefault();
-            msgBox.textContent = '';
-            const submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
+    const msgBox = document.getElementById('api-message');
 
-            const fd = new FormData(form);
+    // ===== LOAD TÁC GIẢ =====
+    async function loadAuthors(){
+        const sel = document.querySelector('select[name="id_tacgia"]');
+        if(!sel) return;
 
-            try {
-                const res = await fetch('../../../backend/api/truyen/add_truyen_api.php', {
-                    method: 'POST',
-                    body: fd
+        sel.innerHTML = '<option value="">-- Đang tải tác giả... --</option>';
+
+        try{
+            const res = await fetch('../../../backend/api/tacgia/tacgia_list_api.php');
+            const json = await res.json();
+
+            if(json.success && json.data.length){
+                sel.innerHTML = '<option value="">-- Chọn tác giả --</option>';
+
+                json.data.forEach(a => {
+                    const opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.ten_tacgia || a.but_danh || ('Tác giả ' + a.id);
+                    sel.appendChild(opt);
                 });
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    msgBox.style.color = 'green';
-                    msgBox.textContent = data.message || 'Thêm truyện thành công';
-                    // redirect to admin list after short delay
-                    setTimeout(()=>{
-                        window.location.href = '';
-                    }, 900);
-                } else {
-                    msgBox.style.color = 'red';
-                    msgBox.textContent = (data && data.message) ? data.message : 'Lỗi khi thêm truyện';
-                    if (data && data.errors && Array.isArray(data.errors)) {
-                        msgBox.textContent += ': ' + data.errors.join('; ');
-                    }
-                }
-            } catch (err) {
-                msgBox.style.color = 'red';
-                msgBox.textContent = 'Lỗi kết nối: ' + err.message;
-            } finally {
-                submitBtn.disabled = false;
+            } else {
+                sel.innerHTML = '<option value="">Không có tác giả</option>';
             }
-        });
+
+        } catch(err){
+            console.error(err);
+            sel.innerHTML = '<option value="">Lỗi tải tác giả</option>';
+        }
+    }
+
+    // ===== LOAD THỂ LOẠI =====
+    async function loadTheLoai(){
+        const box = document.querySelector('.theloai-grid');
+        if(!box) return;
+
+        box.innerHTML = 'Đang tải thể loại...';
+
+        try{
+            const res = await fetch('../../../backend/api/theloai/theloai_list_api.php');
+            const json = await res.json();
+
+            console.log("DATA THE LOAI:", json); // debug
+
+            if(json.success && json.data.length){
+                box.innerHTML = '';
+
+                json.data.forEach(tl => {
+                    const label = document.createElement('label');
+
+                    label.innerHTML = `
+                        <input type="checkbox" name="theloai_ids[]" value="${tl.id}">
+                        ${tl.ten_theloai}
+                    `;
+
+                    box.appendChild(label);
+                });
+
+            } else {
+                box.innerHTML = 'Không có thể loại';
+            }
+
+        } catch(err){
+            console.error("Lỗi thể loại:", err);
+            box.innerHTML = 'Lỗi load thể loại';
+        }
+    }
+
+    // ===== SUBMIT =====
+    const form = document.querySelector('form');
+
+    form.addEventListener('submit', async function(e){
+        e.preventDefault();
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+
+        const fd = new FormData(form);
+
+        try {
+            const res = await fetch('../../../backend/api/truyen/add_truyen_api.php', {
+                method: 'POST',
+                body: fd
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                msgBox.style.color = 'green';
+                msgBox.textContent = 'Thêm thành công';
+            } else {
+                msgBox.style.color = 'red';
+                msgBox.textContent = data.message;
+            }
+
+        } catch (err) {
+            msgBox.textContent = 'Lỗi: ' + err.message;
+        } finally {
+            submitBtn.disabled = false;
+        }
     });
-    </script>
+
+    // ===== INIT =====
+    loadAuthors();
+    loadTheLoai();
+
+});
+</script>
 </body>
 </html>
